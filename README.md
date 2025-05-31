@@ -1,211 +1,244 @@
-# Raspberry Pico 2W + SSD1309 OLED Display
+# 🌱 AirCarto v2.0 - Détecteur CO2 WiFi
 
-Ce projet montre comment utiliser un écran OLED SSD1309 (2.42", 128x64 pixels) avec un Raspberry Pico 2W en MicroPython.
+**Capteur CO2 intelligent avec Raspberry Pico 2W**
+- 📊 Mesures CO2 en temps réel (MH-Z19C)
+- 📺 Affichage OLED (SSD1309)
+- 📡 Connexion WiFi automatique
+- ☁️ Envoi données vers serveur
+- 🔧 Configuration WiFi intuitive
 
-## 🔧 Matériel requis
+## 🚀 Fonctionnalités
 
-- **Raspberry Pi Pico 2W** (avec MicroPython installé)
-- **Écran OLED SSD1309** 2.42" 128x64 pixels (interface I2C)
-- **4 fils de connexion** (jumper wires)
-- **Breadboard** (optionnel)
+### ✨ Configuration WiFi Intelligente
+- **Premier démarrage** → Mode configuration automatique
+- **Captive Portal** → Interface web pour saisir le WiFi
+- **Reconnexion auto** → Se connecte automatiquement au démarrage
+- **Mode dégradé** → Fonctionne même sans WiFi
 
-## 📋 Spécifications de l'écran
+### 📊 Monitoring CO2
+- Mesures toutes les 30 secondes
+- Qualité d'air : EXCELLENT / BON / MOYEN / MAUVAIS / DANGER
+- Affichage graphique sur écran OLED
+- Historique et tendances
 
-- **Modèle**: SSD1309 OLED
-- **Taille**: 2.42 pouces
-- **Résolution**: 128x64 pixels
-- **Interface**: I2C/SPI (nous utilisons I2C)
-- **Connexions utilisées**: 
-  - R9, R10, R11, R12 (I2C)
-  - R8 (SPI - non utilisé ici)
+### 🌐 Connectivité
+- Envoi automatique vers serveur
+- Interface web de surveillance
+- API REST pour intégration
+- Gestion des déconnexions
 
-## 🔌 Schéma de câblage
+## 🔧 Installation
+
+### 1. Matériel requis
+
+**Raspberry Pico 2W :**
+- [Raspberry Pico 2W](https://www.raspberrypi.com/products/raspberry-pi-pico-2/)
+- Câble USB-C
+
+**Capteur CO2 MH-Z19C :**
+- [MH-Z19C](https://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z19c-pins-type-co2-manual-ver1_0.pdf)
+- Alimentation 5V
+
+**Écran OLED SSD1309 :**
+- SSD1309 128x64 (interface SPI)
+- Alimentation 3.3V
+
+### 2. Connexions
 
 ```
-Raspberry Pico 2W    →    SSD1309 OLED
-==================        ============
-GPIO 4 (Pin 6)       →    SDA (Data)
-GPIO 5 (Pin 7)       →    SCL (Clock)  
-3.3V (Pin 36)        →    VCC (+3.3V)
-GND (Pin 38)         →    GND (Ground)
+=== ÉCRAN OLED SSD1309 (SPI) ===
+Pin 33 (GND)  → GND écran
+Pin 36 (3V3)  → VCC écran
+Pin 4 (GPIO 2) → SCK écran
+Pin 5 (GPIO 3) → SDA/MOSI écran
+Pin 3 (GPIO 1) → RES écran
+Pin 7 (GPIO 5) → DC écran
+Pin 9 (GPIO 6) → CS écran
+
+=== CAPTEUR CO2 MH-Z19C (UART) ===
+Pin 39 (VSYS) → VCC capteur (5V)
+Pin 33 (GND)  → GND capteur (partagé)
+Pin 12 (GPIO 9) → RX Pico (TX capteur)
+Pin 11 (GPIO 8) → TX Pico (RX capteur)
 ```
 
-## 📁 Structure des fichiers
+### 3. Installation logicielle
+
+1. **Flasher MicroPython sur le Pico 2W**
+   ```bash
+   # Télécharger MicroPython pour Pico 2W
+   # https://micropython.org/download/rp2-pico-w/
+   ```
+
+2. **Copier les fichiers sur le Pico**
+   ```
+   aircarto_complete.py  # Programme principal
+   ssd1306.py           # Driver écran OLED
+   ```
+
+3. **Renommer le fichier principal**
+   ```
+   aircarto_complete.py → main.py
+   ```
+
+## 🎯 Utilisation
+
+### Premier démarrage (Configuration WiFi)
+
+1. **Alimenter le Pico** → L'écran affiche "Mode Config"
+
+2. **Connecter au WiFi temporaire :**
+   - Réseau : `AirCarto-Setup`
+   - Mot de passe : `aircarto123`
+
+3. **Configuration automatique :**
+   - Une page web s'ouvre automatiquement
+   - Sélectionner votre réseau WiFi
+   - Saisir le mot de passe
+   - Cliquer "Configurer AirCarto"
+
+4. **Redémarrage automatique** → Le Pico se connecte à votre WiFi
+
+### Fonctionnement normal
+
+- **Démarrage** → Connexion WiFi automatique
+- **Préchauffage** → 30 secondes de stabilisation capteur
+- **Mesures** → CO2 toutes les 30 secondes
+- **Affichage** → Valeurs en temps réel sur écran
+- **Envoi serveur** → Données transmises automatiquement
+
+### Indicateurs écran
 
 ```
-aircarto-project/
-├── main.py          # Code principal du projet
-├── ssd1306.py       # Bibliothèque pour écran OLED (compatible SSD1309)
-└── README.md        # Ce fichier
+📶 WiFi connecté     ❌ WiFi déconnecté
+☁️ Serveur OK       📡 Serveur erreur
+
+CO2: 420 ppm
+Air: BON
+
+[████████░░░░] Barre de niveau
+Up: 1234s           Temps de fonctionnement
 ```
 
-## 🚀 Installation et utilisation
+## 🌐 Serveur de test
 
-### 1. Préparer le Raspberry Pico 2W
-
-Assure-toi que ton Pico 2W a **MicroPython** installé :
-1. Télécharge le firmware MicroPython pour Pico 2W depuis [micropython.org](https://micropython.org/download/RPI_PICO2/)
-2. Maintiens le bouton BOOTSEL et connecte le Pico à l'ordinateur
-3. Copie le fichier `.uf2` sur le disque RPI-RP2 qui apparaît
-
-### 2. Transférer les fichiers sur le Pico
-
-Tu as plusieurs options pour transférer les fichiers :
-
-#### **Option A : Avec Thonny IDE (Recommandé pour débuter)**
-
-1. **Installer Thonny** : [thonny.org](https://thonny.org/)
-2. **Configurer Thonny** :
-   - Ouvre Thonny
-   - Va dans `Tools` → `Options` → `Interpreter`
-   - Sélectionne "MicroPython (Raspberry Pi Pico)"
-   - Sélectionne le port COM de ton Pico
-3. **Transférer les fichiers** :
-   - Ouvre `ssd1306.py` dans Thonny
-   - `File` → `Save as...` → Choisis "Raspberry Pi Pico"
-   - Sauvegarde comme `ssd1306.py`
-   - Répète pour `main.py`
-
-#### **Option B : Avec rshell**
-
+### Installation serveur
 ```bash
-# Installer rshell
-pip install rshell
+# Installer Flask
+pip install flask
 
-# Connecter au Pico
-rshell -p /dev/ttyACM0  # Linux/Mac
-rshell -p COM3          # Windows
-
-# Copier les fichiers
-cp ssd1306.py /pyboard/
-cp main.py /pyboard/
-
-# Redémarrer
-repl
+# Lancer le serveur de test
+python test_server.py
 ```
 
-#### **Option C : Avec ampy**
+### Interface web
+- **URL** : http://localhost:5000
+- **API** : http://localhost:5000/api/co2
+- **Auto-refresh** : 30 secondes
 
-```bash
-# Installer ampy
-pip install adafruit-ampy
-
-# Copier les fichiers
-ampy -p /dev/ttyACM0 put ssd1306.py  # Linux/Mac
-ampy -p COM3 put ssd1306.py          # Windows
-
-ampy -p /dev/ttyACM0 put main.py
+### Configuration Pico
+Dans `aircarto_complete.py`, modifier :
+```python
+SERVER_URL = "http://votre-ip:5000/api/co2"
 ```
 
-#### **Option D : Avec mpremote (recommandé)**
+## 🔧 Configuration avancée
 
-```bash
-# Installer mpremote
-pip install mpremote
-
-# Copier les fichiers
-mpremote cp ssd1306.py :
-mpremote cp main.py :
-
-# Exécuter le code
-mpremote exec "exec(open('main.py').read())"
-```
-
-#### **Option E : Depuis VS Code avec l'extension Pico-W-Go**
-
-1. Installe l'extension "Pico-W-Go" dans VS Code
-2. Ouvre le dossier du projet
-3. `Ctrl+Shift+P` → "Pico-W-Go: Upload current file"
-4. Ou `Ctrl+Shift+P` → "Pico-W-Go: Upload project"
-
-### 3. Exécuter le code
-
-Une fois les fichiers transférés :
+### Paramètres modifiables
 
 ```python
-# Dans le terminal de Thonny ou via rshell
-exec(open('main.py').read())
+# Intervalle de mesure (secondes)
+MEASUREMENT_INTERVAL = 30
+
+# URL du serveur
+SERVER_URL = "https://your-server.com/api/co2"
+
+# ID unique du dispositif
+"device_id": "aircarto_001"
+
+# Localisation
+"location": "salon"
 ```
 
-Ou redémarre simplement le Pico pour que `main.py` s'exécute automatiquement.
+### API Serveur
 
-## 🔍 Test et dépannage
+**Endpoint** : `POST /api/co2`
 
-### Messages de diagnostic
-
-Le code affiche des messages pour t'aider à diagnostiquer les problèmes :
-
-- ✅ **"Périphérique(s) trouvé(s)!"** : L'écran est détecté
-- ❌ **"Aucun périphérique I2C détecté!"** : Problème de connexion
-- ❌ **"Bibliothèque ssd1306 non trouvée!"** : Fichier manquant
-
-### Problèmes courants
-
-1. **Écran ne s'allume pas** :
-   - Vérifie l'alimentation (3.3V et GND)
-   - Vérifie que l'écran est bien compatible I2C
-
-2. **Erreur I2C (EIO ou ETIMEDOUT)** :
-   - Vérifie les connexions SDA/SCL
-   - Essaie de réduire la fréquence I2C : `freq=100000`
-   - Ajoute des résistances de pull-up (4.7kΩ) sur SDA et SCL
-
-3. **Adresse I2C incorrecte** :
-   - L'écran peut utiliser l'adresse 0x3D au lieu de 0x3C
-   - Le code détecte automatiquement l'adresse
-
-### Scanner I2C
-
-Pour vérifier les périphériques connectés :
-
-```python
-from machine import Pin, I2C
-i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=400000)
-devices = i2c.scan()
-print("Périphériques trouvés:", [hex(d) for d in devices])
+**Format JSON** :
+```json
+{
+  "device_id": "aircarto_001",
+  "timestamp": 1234567890,
+  "co2_ppm": 420,
+  "air_quality": "BON",
+  "location": "salon"
+}
 ```
 
-## 📊 Fonctionnalités du code
+## 🛠️ Dépannage
 
-### Code principal (`main.py`)
+### Problèmes WiFi
 
-- **Détection automatique** de l'écran I2C
-- **Test de connexion** avec messages d'erreur détaillés
-- **Affichage de texte** simple
-- **Animation de clignotement** pour tester l'écran
+**Symptôme** : Ne se connecte pas au WiFi
+**Solution** :
+1. Vérifier nom réseau et mot de passe
+2. Redémarrer en mode configuration (débrancher/rebrancher)
+3. Vérifier portée WiFi
 
-### Bibliothèque (`ssd1306.py`)
+### Problèmes capteur
 
-- **Compatible SSD1306/SSD1309** 
-- **Support I2C et SPI**
-- **Fonctions graphiques** : lignes, rectangles, pixels
-- **Contrôle d'affichage** : contraste, inversion, on/off
+**Symptôme** : "CAPTEUR ERREUR"
+**Solutions** :
+1. Vérifier connexions UART
+2. Vérifier alimentation 5V
+3. Attendre préchauffage complet
 
-## 🎯 Prochaines étapes
+### Problèmes écran
 
-Pour ton projet AirCarto avec capteur CO2, tu peux :
+**Symptôme** : Écran noir
+**Solutions** :
+1. Vérifier connexions SPI
+2. Vérifier fichier `ssd1306.py`
+3. Vérifier alimentation 3.3V
 
-1. **Ajouter le capteur MH-Z19C** (UART)
-2. **Créer une interface utilisateur** sur l'écran
-3. **Ajouter la connectivité WiFi** du Pico 2W
-4. **Envoyer les données** vers un serveur
+### Reset configuration WiFi
 
-## 📚 Ressources utiles
+**Méthode 1** : Supprimer le fichier `wifi_config.json` sur le Pico
 
-- [Documentation MicroPython](https://docs.micropython.org/)
-- [Raspberry Pi Pico SDK](https://www.raspberrypi.org/documentation/pico/getting-started/)
-- [Guide Thonny IDE](https://thonny.org/)
-- [Pinout Raspberry Pico](https://pinout.xyz/pinout/i2c)
+**Méthode 2** : Maintenir un bouton pendant le démarrage (à implémenter)
 
-## 🐛 Support
+## 📊 Interprétation des mesures
 
-Si tu rencontres des problèmes :
+| CO2 (ppm) | Qualité | État |
+|-----------|---------|------|
+| < 400     | EXCELLENT 😊 | Air extérieur |
+| 400-600   | BON 🙂 | Air intérieur correct |
+| 600-1000  | MOYEN 😐 | Aération recommandée |
+| 1000-1500 | MAUVAIS 😟 | Aération nécessaire |
+| > 1500    | DANGER 🚨 | Aération urgente |
 
-1. Vérifie que MicroPython est bien installé
-2. Contrôle les connexions physiques
-3. Utilise le scanner I2C pour détecter l'écran
-4. Vérifie les messages d'erreur dans la console
+## 🚀 Évolutions futures
+
+- [ ] Interface web complète
+- [ ] Base de données persistante
+- [ ] Alertes par email/SMS
+- [ ] Capteurs multiples
+- [ ] Graphiques historiques
+- [ ] Export données CSV
+- [ ] Mode veille intelligent
+- [ ] Calibration automatique
+
+## 📄 Licence
+
+Projet open-source - Libre d'utilisation et modification
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à :
+- Signaler des bugs
+- Proposer des améliorations
+- Partager vos modifications
 
 ---
 
-**Bon développement avec ton projet AirCarto ! 🚀** 
+**🌱 AirCarto v2.0** - Pour un air plus sain ! 🌿 
