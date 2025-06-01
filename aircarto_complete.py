@@ -35,7 +35,7 @@ print("🌱 === AirCarto v2.0 - WiFi Ready === 🌱")
 # CONFIGURATION
 # =====================================================
 WIFI_CONFIG_FILE = "wifi_config.json"
-SERVER_URL = "https://your-server.com/api/co2"  # À configurer
+SERVER_URL = "http://192.168.1.100:5000/api/co2"  # 🔧 CHANGEZ CETTE IP!
 AP_SSID = "AirCarto-Setup"
 AP_PASSWORD = "aircarto123"
 MEASUREMENT_INTERVAL = 30  # secondes
@@ -59,6 +59,7 @@ uart = UART(1, baudrate=9600, tx=Pin(8), rx=Pin(9))
 oled = None
 wifi_connected = False
 ap_mode = False
+mascot = None  # Nouvelle variable pour la mascotte
 
 # =====================================================
 # GESTION WIFI & CONFIGURATION
@@ -506,7 +507,7 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, server_status):
 # =====================================================
 
 def main():
-    global oled, wifi_connected, ap_mode
+    global oled, wifi_connected, ap_mode, mascot
     
     try:
         # Initialiser l'écran OLED
@@ -514,6 +515,17 @@ def main():
         from ssd1306 import SSD1306_SPI
         oled = SSD1306_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
         print("✅ Écran prêt!")
+        
+        # Initialiser la mascotte
+        print("🐱 Initialisation mascotte...")
+        try:
+            from aircarto_mascot import AirCartoMascot, draw_main_display_with_mascot
+            mascot = AirCartoMascot(oled)
+            print("✅ Mascotte prête!")
+            use_mascot = True
+        except ImportError:
+            print("⚠️ Mascotte non disponible, mode classique")
+            use_mascot = False
         
         display_status("Demarrage...", "AirCarto v2.0")
         time.sleep(2)
@@ -534,6 +546,9 @@ def main():
                 return
         else:
             wifi_configured = True
+            # Animation de connexion réussie
+            if use_mascot and mascot:
+                mascot.animate_reaction("wifi_connect")
         
         # Si on arrive ici, le WiFi est configuré
         if wifi_configured:
@@ -551,6 +566,7 @@ def main():
         
         # Boucle principale
         last_server_success = True
+        last_co2_level = None
         
         while True:
             print("📊 Nouvelle mesure...")
@@ -560,6 +576,8 @@ def main():
             if not wlan.isconnected():
                 print("❌ WiFi déconnecté!")
                 wifi_connected = False
+                if use_mascot and mascot:
+                    mascot.animate_reaction("wifi_error")
                 # Tenter reconnexion
                 if not connect_wifi():
                     time.sleep(RETRY_INTERVAL)
@@ -568,6 +586,14 @@ def main():
             # Lecture CO2
             co2_ppm = read_co2()
             status, emoji = get_air_quality_status(co2_ppm)
+            
+            # Déclencher animations selon les changements
+            if use_mascot and mascot and co2_ppm is not None:
+                if last_co2_level is None:
+                    last_co2_level = co2_ppm
+                elif co2_ppm > 1500 and last_co2_level <= 1500:
+                    mascot.animate_reaction("co2_danger")
+                last_co2_level = co2_ppm
             
             if co2_ppm is not None:
                 print(f"CO2: {co2_ppm} ppm - {status}")
@@ -579,8 +605,11 @@ def main():
                 print("❌ Erreur lecture CO2")
                 last_server_success = False
             
-            # Affichage
-            draw_main_display(co2_ppm, status, emoji, wifi_connected, last_server_success)
+            # Affichage avec ou sans mascotte
+            if use_mascot and mascot:
+                draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_connected, last_server_success)
+            else:
+                draw_main_display(co2_ppm, status, emoji, wifi_connected, last_server_success)
             
             # Attendre prochaine mesure
             time.sleep(MEASUREMENT_INTERVAL)

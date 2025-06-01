@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: aircarto-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=aircarto
+      - DOCKER_INFLUXDB_INIT_PASSWORD=aircarto2024
+      - DOCKER_INFLUXDB_INIT_ORG=aircarto
+      - DOCKER_INFLUXDB_INIT_BUCKET=co2_data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=aircarto-token-2024
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    restart: unless-stopped
+    networks:
+      - aircarto-network
+
+  aircarto-server:
+    build: .
+    container_name: aircarto-server
+    ports:
+      - "5000:5000"
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=aircarto-token-2024
+      - INFLUXDB_ORG=aircarto
+      - INFLUXDB_BUCKET=co2_data
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+    networks:
+      - aircarto-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: aircarto-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - aircarto-server
+    restart: unless-stopped
+    networks:
+      - aircarto-network
+
+volumes:
+  influxdb_data:
+  influxdb_config:
+
+networks:
+  aircarto-network:
+    driver: bridge 

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirCarto - Graphiques</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c5282;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .nav {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .nav a {
+            background: rgba(255, 255, 255, 0.9);
+            color: #4299e1;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 0 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .nav a:hover {
+            background: #4299e1;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        select, button {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #4299e1;
+            color: white;
+            border-color: #4299e1;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #2c5282;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .info-item {
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        
+        .info-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        @media (min-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .chart-container:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 AirCarto Graphiques</h1>
+        <p class="subtitle">Analyse des données CO2</p>
+    </div>
+    
+    <div class="nav">
+        <a href="/">🏠 Dashboard</a>
+        <a href="/charts">📊 Graphiques</a>
+        <a href="/health">🔧 Status</a>
+    </div>
+    
+    <div class="container">
+        <!-- Contrôles -->
+        <div class="controls">
+            <div class="control-group">
+                <label>📡 Capteur:</label>
+                <select id="device-select">
+                    <option value="aircarto_001">AirCarto 001</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>⏱️ Période:</label>
+                <select id="period-select">
+                    <option value="1">1 heure</option>
+                    <option value="6">6 heures</option>
+                    <option value="24" selected>24 heures</option>
+                    <option value="168">7 jours</option>
+                </select>
+            </div>
+            <button onclick="updateCharts()">🔄 Actualiser</button>
+            <button onclick="exportData()">💾 Exporter CSV</button>
+        </div>
+        
+        <!-- Informations générales -->
+        <div class="info-panel">
+            <div class="info-grid" id="info-grid">
+                <div class="info-item">
+                    <div class="info-value" id="current-co2">-</div>
+                    <div class="info-label">CO2 actuel (ppm)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="avg-period">-</div>
+                    <div class="info-label">Moyenne période</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="min-period">-</div>
+                    <div class="info-label">Minimum période</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="max-period">-</div>
+                    <div class="info-label">Maximum période</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Graphiques -->
+        <div class="charts-grid">
+            <!-- Graphique principal en ligne -->
+            <div class="chart-container">
+                <div class="chart-title">📈 Évolution CO2 dans le temps</div>
+                <div class="chart-wrapper">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Histogramme qualité air -->
+            <div class="chart-container">
+                <div class="chart-title">🎯 Répartition qualité de l'air</div>
+                <div class="chart-wrapper">
+                    <canvas id="qualityChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Graphique en aires -->
+            <div class="chart-container">
+                <div class="chart-title">📊 Zones de qualité</div>
+                <div class="chart-wrapper">
+                    <canvas id="areaChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; color: rgba(255,255,255,0.8);">
+            <p>📡 Dernière mise à jour: <span id="last-update">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        let timeChart, qualityChart, areaChart;
+        let currentData = [];
+        
+        // Couleurs selon qualité de l'air
+        const qualityColors = {
+            excellent: '#48bb78',
+            good: '#68d391', 
+            medium: '#ed8936',
+            bad: '#f56565',
+            danger: '#e53e3e'
+        };
+        
+        // Initialiser les graphiques
+        function initCharts() {
+            // Graphique temporel
+            const timeCtx = document.getElementById('timeChart').getContext('2d');
+            timeChart = new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CO2 (ppm)',
+                        data: [],
+                        borderColor: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'CO2 (ppm)'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Temps'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            backgroundColor: function(context) {
+                                const value = context.parsed.y;
+                                if (value < 400) return qualityColors.excellent;
+                                if (value < 600) return qualityColors.good;
+                                if (value < 1000) return qualityColors.medium;
+                                if (value < 1500) return qualityColors.bad;
+                                return qualityColors.danger;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Graphique qualité (donut)
+            const qualityCtx = document.getElementById('qualityChart').getContext('2d');
+            qualityChart = new Chart(qualityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Excellent', 'Bon', 'Moyen', 'Mauvais', 'Danger'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            qualityColors.excellent,
+                            qualityColors.good,
+                            qualityColors.medium,
+                            qualityColors.bad,
+                            qualityColors.danger
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Graphique en aires
+            const areaCtx = document.getElementById('areaChart').getContext('2d');
+            areaChart = new Chart(areaCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Excellent (< 400)',
+                            data: [],
+                            backgroundColor: 'rgba(72, 187, 120, 0.2)',
+                            borderColor: qualityColors.excellent,
+                            fill: '+1'
+                        },
+                        {
+                            label: 'Bon (400-600)',
+                            data: [],
+                            backgroundColor: 'rgba(104, 211, 145, 0.2)',
+                            borderColor: qualityColors.good,
+                            fill: '+1'
+                        },
+                        {
+                            label: 'Moyen (600-1000)',
+                            data: [],
+                            backgroundColor: 'rgba(237, 137, 54, 0.2)',
+                            borderColor: qualityColors.medium,
+                            fill: '+1'
+                        },
+                        {
+                            label: 'Mauvais (1000-1500)',
+                            data: [],
+                            backgroundColor: 'rgba(245, 101, 101, 0.2)',
+                            borderColor: qualityColors.bad,
+                            fill: '+1'
+                        },
+                        {
+                            label: 'Danger (> 1500)',
+                            data: [],
+                            backgroundColor: 'rgba(229, 62, 62, 0.2)',
+                            borderColor: qualityColors.danger,
+                            fill: 'origin'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Pourcentage du temps'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Charger les données
+        async function loadData() {
+            try {
+                const device = document.getElementById('device-select').value;
+                const hours = document.getElementById('period-select').value;
+                
+                const response = await fetch(`/api/data/history?device=${device}&hours=${hours}`);
+                const data = await response.json();
+                
+                currentData = data.data || [];
+                updateInfo(currentData);
+                updateTimeChart(currentData);
+                updateQualityChart(currentData);
+                updateAreaChart(currentData);
+                
+                document.getElementById('last-update').textContent = new Date().toLocaleString('fr-FR');
+                
+            } catch (error) {
+                console.error('Erreur chargement données:', error);
+            }
+        }
+        
+        // Mettre à jour les infos
+        function updateInfo(data) {
+            if (data.length === 0) {
+                document.getElementById('current-co2').textContent = 'N/A';
+                document.getElementById('avg-period').textContent = 'N/A';
+                document.getElementById('min-period').textContent = 'N/A';
+                document.getElementById('max-period').textContent = 'N/A';
+                return;
+            }
+            
+            const values = data.map(d => d.co2_ppm);
+            const current = values[values.length - 1];
+            const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            
+            document.getElementById('current-co2').textContent = current;
+            document.getElementById('avg-period').textContent = avg;
+            document.getElementById('min-period').textContent = min;
+            document.getElementById('max-period').textContent = max;
+        }
+        
+        // Mettre à jour graphique temporel
+        function updateTimeChart(data) {
+            const labels = data.map(d => new Date(d.time).toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            }));
+            const values = data.map(d => d.co2_ppm);
+            
+            timeChart.data.labels = labels;
+            timeChart.data.datasets[0].data = values;
+            timeChart.update();
+        }
+        
+        // Mettre à jour graphique qualité
+        function updateQualityChart(data) {
+            const counts = [0, 0, 0, 0, 0]; // excellent, good, medium, bad, danger
+            
+            data.forEach(d => {
+                const co2 = d.co2_ppm;
+                if (co2 < 400) counts[0]++;
+                else if (co2 < 600) counts[1]++;
+                else if (co2 < 1000) counts[2]++;
+                else if (co2 < 1500) counts[3]++;
+                else counts[4]++;
+            });
+            
+            qualityChart.data.datasets[0].data = counts;
+            qualityChart.update();
+        }
+        
+        // Mettre à jour graphique en aires
+        function updateAreaChart(data) {
+            // Grouper les données par heures
+            const hourlyData = {};
+            
+            data.forEach(d => {
+                const hour = new Date(d.time).getHours();
+                if (!hourlyData[hour]) {
+                    hourlyData[hour] = { excellent: 0, good: 0, medium: 0, bad: 0, danger: 0, total: 0 };
+                }
+                
+                const co2 = d.co2_ppm;
+                if (co2 < 400) hourlyData[hour].excellent++;
+                else if (co2 < 600) hourlyData[hour].good++;
+                else if (co2 < 1000) hourlyData[hour].medium++;
+                else if (co2 < 1500) hourlyData[hour].bad++;
+                else hourlyData[hour].danger++;
+                
+                hourlyData[hour].total++;
+            });
+            
+            // Convertir en pourcentages
+            const hours = Array.from({length: 24}, (_, i) => i);
+            const labels = hours.map(h => `${h}h`);
+            
+            const excellentData = hours.map(h => hourlyData[h] ? (hourlyData[h].excellent / hourlyData[h].total * 100) : 0);
+            const goodData = hours.map(h => hourlyData[h] ? (hourlyData[h].good / hourlyData[h].total * 100) : 0);
+            const mediumData = hours.map(h => hourlyData[h] ? (hourlyData[h].medium / hourlyData[h].total * 100) : 0);
+            const badData = hours.map(h => hourlyData[h] ? (hourlyData[h].bad / hourlyData[h].total * 100) : 0);
+            const dangerData = hours.map(h => hourlyData[h] ? (hourlyData[h].danger / hourlyData[h].total * 100) : 0);
+            
+            areaChart.data.labels = labels;
+            areaChart.data.datasets[0].data = excellentData;
+            areaChart.data.datasets[1].data = goodData;
+            areaChart.data.datasets[2].data = mediumData;
+            areaChart.data.datasets[3].data = badData;
+            areaChart.data.datasets[4].data = dangerData;
+            areaChart.update();
+        }
+        
+        // Fonction pour actualiser les graphiques
+        function updateCharts() {
+            loadData();
+        }
+        
+        // Fonction pour exporter les données
+        function exportData() {
+            if (currentData.length === 0) {
+                alert('Aucune donnée à exporter');
+                return;
+            }
+            
+            const device = document.getElementById('device-select').value;
+            const csv = 'time,co2_ppm,air_quality\n' + 
+                currentData.map(d => {
+                    const quality = d.co2_ppm < 400 ? 'excellent' :
+                                   d.co2_ppm < 600 ? 'good' :
+                                   d.co2_ppm < 1000 ? 'medium' :
+                                   d.co2_ppm < 1500 ? 'bad' : 'danger';
+                    return `${d.time},${d.co2_ppm},${quality}`;
+                }).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aircarto-${device}-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            loadData();
+            
+            // Auto-refresh toutes les 30 secondes
+            setInterval(loadData, 30000);
+        });
+    </script>
+</body>
+</html> 
