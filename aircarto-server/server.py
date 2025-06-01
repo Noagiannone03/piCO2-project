@@ -248,6 +248,15 @@ def health_check():
     }
     return jsonify(status)
 
+# Initialisation automatique InfluxDB pour Gunicorn
+# S'exécute au chargement du module, même avec Gunicorn
+if not influx_client:
+    init_result = init_influxdb()
+    if init_result:
+        logger.info("🔄 InfluxDB initialisé automatiquement (Gunicorn)")
+    else:
+        logger.warning("⚠️  InfluxDB non disponible au démarrage (Gunicorn)")
+
 if __name__ == '__main__':
     print("🌐 === AirCarto Server v2.0 === 🌐")
     print("📊 Serveur de données CO2 avec InfluxDB")
