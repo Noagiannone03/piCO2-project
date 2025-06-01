@@ -5,7 +5,7 @@ Reçoit les données des capteurs Pico et les stocke dans InfluxDB
 Interface web pour visualiser les données en temps réel
 """
 
-from flask import Flask, request, jsonify, render_template, send_static_file
+from flask import Flask, request, jsonify, render_template
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 import json

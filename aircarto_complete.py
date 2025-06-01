@@ -35,7 +35,7 @@ print("🌱 === AirCarto v2.0 - WiFi Ready === 🌱")
 # CONFIGURATION
 # =====================================================
 WIFI_CONFIG_FILE = "wifi_config.json"
-SERVER_URL = "http://192.168.1.100:5000/api/co2"  # 🔧 CHANGEZ CETTE IP!
+SERVER_URL = "http://192.168.1.42:5000/api/co2"  # 🔧 IP du Raspberry Pi!
 AP_SSID = "AirCarto-Setup"
 AP_PASSWORD = "aircarto123"
 MEASUREMENT_INTERVAL = 30  # secondes
@@ -432,19 +432,21 @@ def send_to_server(co2_ppm, status):
         
         print(f"📡 Envoi au serveur: {co2_ppm} ppm")
         
-        # Pour le moment, simuler l'envoi (commentez pour activer vraiment)
-        # response = urequests.post(SERVER_URL, json=data, headers=headers)
-        # 
-        # if response.status_code == 200:
-        #     print("✅ Données envoyées!")
-        #     return True
-        # else:
-        #     print(f"❌ Erreur serveur: {response.status_code}")
-        #     return False
+        # ENVOI RÉEL activé !
+        response = urequests.post(SERVER_URL, json=data, headers=headers)
         
-        # Simulation pour test
-        print("✅ Données envoyées! (simulation)")
-        return True
+        if response.status_code == 200:
+            print("✅ Données envoyées!")
+            response.close()  # Libérer la mémoire
+            return True
+        else:
+            print(f"❌ Erreur serveur: {response.status_code}")
+            response.close()
+            return False
+        
+        # # Simulation désactivée
+        # print("✅ Données envoyées! (simulation)")
+        # return True
         
     except Exception as e:
         print(f"❌ Erreur envoi: {e}")
