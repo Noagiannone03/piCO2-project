@@ -10,21 +10,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --green-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            --bg-primary: #f8fafc;
-            --bg-card: #ffffff;
-            --bg-surface: #f1f5f9;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --text-accent: #3b82f6;
-            --border-light: #e2e8f0;
-            --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            /* Couleurs Apple-like subtiles */
+            --primary: #007AFF;
+            --primary-light: #5AC8FA;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --info: #5AC8FA;
+            
+            /* Backgrounds subtils */
+            --bg-primary: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --bg-surface: #F7F7F7;
+            --bg-hover: #F5F5F7;
+            --bg-accent: rgba(0, 122, 255, 0.08);
+            
+            /* Textes élégants */
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-tertiary: #6E6E73;
+            --text-accent: #007AFF;
+            
+            /* Bordures douces */
+            --border-light: #E5E5E7;
+            --border-medium: #D1D1D6;
+            
+            /* Ombres Apple-style */
+            --shadow-soft: 0 2px 16px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.12);
+            
+            /* Rayons de courbure */
+            --radius-small: 8px;
+            --radius-medium: 12px;
+            --radius-large: 16px;
+            --radius-xl: 20px;
         }
 
         * {
@@ -39,12 +60,14 @@
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Header avec design moderne */
+        /* Header moderne et élégant */
         .header {
-            background: var(--primary-gradient);
-            padding: 2rem 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 3rem 0 4rem 0;
             position: relative;
             overflow: hidden;
         }
@@ -56,40 +79,49 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,0 1000,0 1000,80 0,100"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><circle cx="200" cy="50" r="3"/><circle cx="400" cy="30" r="2"/><circle cx="600" cy="70" r="2.5"/><circle cx="800" cy="40" r="1.5"/></svg>');
             background-size: cover;
         }
 
         .header-content {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
             position: relative;
             z-index: 1;
+            text-align: center;
         }
 
         .header h1 {
             color: white;
             font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.025em;
         }
 
         .header .subtitle {
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 1.25rem;
             font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        /* Container principal */
+        /* Container avec grille responsive */
         .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
+            max-width: 1200px;
+            margin: -2rem auto 0;
+            padding: 0 2rem 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .grid-layout {
             display: grid;
-            gap: 2rem;
             grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            margin-bottom: 2rem;
         }
 
         .left-column {
@@ -101,105 +133,106 @@
         .right-column {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 1.5rem;
         }
 
-        /* Cards avec style flat moderne */
+        /* Cards avec style Apple */
         .card {
             background: var(--bg-card);
-            border-radius: 16px;
+            border-radius: var(--radius-large);
             padding: 2rem;
-            box-shadow: var(--shadow-medium);
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-large);
+            box-shadow: var(--shadow-medium);
         }
 
-        /* Boutons avec style enfoncé */
+        /* Boutons style Apple avec effet enfoncé */
         .btn {
             background: var(--bg-card);
             color: var(--text-primary);
-            border: 4px solid #000;
-            border-bottom-width: 8px;
-            border-left-width: 6px;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            font-size: 1rem;
+            border: 2px solid var(--border-medium);
+            border-bottom-width: 4px;
+            border-right-width: 3px;
+            border-radius: var(--radius-medium);
+            padding: 0.875rem 1.75rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.15s ease;
-            position: relative;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            text-decoration: none;
         }
 
         .btn:hover {
             transform: translate(1px, 1px);
-            border-bottom-width: 6px;
-            border-left-width: 4px;
+            border-bottom-width: 3px;
+            border-right-width: 2px;
+            background: var(--bg-hover);
         }
 
         .btn:active {
             transform: translate(2px, 2px);
-            border-bottom-width: 4px;
-            border-left-width: 4px;
+            border-bottom-width: 2px;
+            border-right-width: 2px;
         }
 
         .btn-primary {
-            background: var(--primary-gradient);
+            background: var(--primary);
             color: white;
+            border-color: #0056CC;
+        }
+
+        .btn-primary:hover {
+            background: #0056CC;
         }
 
         .btn-success {
-            background: var(--green-gradient);
+            background: var(--success);
             color: white;
+            border-color: #248A3D;
         }
 
         .btn-warning {
-            background: var(--warning-gradient);
+            background: var(--warning);
             color: white;
+            border-color: #CC7A00;
         }
 
-        /* Stats principales */
+        /* Stats overview améliorées */
         .stats-overview {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.5rem;
         }
 
         .stat-card {
             background: var(--bg-card);
-            border-radius: 16px;
-            padding: 2rem;
+            border-radius: var(--radius-large);
+            padding: 2rem 1.5rem;
             text-align: center;
-            box-shadow: var(--shadow-medium);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
             position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--primary-gradient);
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
         }
 
         .stat-value {
-            font-size: 3rem;
-            font-weight: 800;
+            font-size: 2.5rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary);
         }
 
         .stat-label {
@@ -210,37 +243,29 @@
             letter-spacing: 0.05em;
         }
 
-        /* Niveau CO2 principal */
+        /* CO2 principal élégant */
         .co2-main {
             text-align: center;
             padding: 3rem 2rem;
             background: var(--bg-card);
-            border-radius: 20px;
-            box-shadow: var(--shadow-large);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-medium);
+            border: 1px solid var(--border-light);
             position: relative;
-            overflow: hidden;
-        }
-
-        .co2-main::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: var(--primary-gradient);
         }
 
         .co2-current {
-            font-size: 4.5rem;
-            font-weight: 900;
-            margin-bottom: 1rem;
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
         }
 
         .co2-unit {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             color: var(--text-secondary);
             font-weight: 500;
+            margin-bottom: 1.5rem;
         }
 
         .air-quality-badge {
@@ -250,82 +275,85 @@
             padding: 0.75rem 1.5rem;
             border-radius: 50px;
             font-weight: 600;
-            font-size: 1rem;
-            margin-top: 1rem;
-        }
-
-        /* Couleurs air quality */
-        .excellent { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: white; }
-        .good { background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%); color: white; }
-        .medium { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: white; }
-        .bad { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); color: white; }
-        .danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; }
-
-        /* Conseils */
-        .advice-card {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px solid #0ea5e9;
-            border-radius: 16px;
-            padding: 2rem;
-            position: relative;
-        }
-
-        .advice-card::before {
-            content: '💡';
-            position: absolute;
-            top: -10px;
-            right: 20px;
-            font-size: 2rem;
-            background: var(--bg-card);
-            padding: 0.5rem;
-            border-radius: 50%;
-            border: 2px solid #0ea5e9;
-        }
-
-        .advice-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #0369a1;
+            font-size: 0.9rem;
             margin-bottom: 1rem;
         }
 
-        .advice-text {
-            color: #0f172a;
-            line-height: 1.7;
+        /* Couleurs air quality subtiles */
+        .excellent { 
+            background: linear-gradient(135deg, var(--success) 0%, #28A745 100%); 
+            color: white; 
+        }
+        .good { 
+            background: linear-gradient(135deg, #40E0D0 0%, var(--info) 100%); 
+            color: white; 
+        }
+        .medium { 
+            background: linear-gradient(135deg, var(--warning) 0%, #FFB84D 100%); 
+            color: white; 
+        }
+        .bad { 
+            background: linear-gradient(135deg, #FF6B47 0%, var(--danger) 100%); 
+            color: white; 
+        }
+        .danger { 
+            background: linear-gradient(135deg, var(--danger) 0%, #CC1F1A 100%); 
+            color: white; 
         }
 
-        /* Météo */
+        /* Cartes latérales */
         .weather-card {
-            background: var(--green-gradient);
+            background: linear-gradient(135deg, var(--info) 0%, var(--primary-light) 100%);
             color: white;
-            border-radius: 16px;
-            padding: 2rem;
+            border-radius: var(--radius-large);
+            padding: 1.5rem;
             text-align: center;
+            border: none;
         }
 
         .weather-temp {
-            font-size: 3rem;
-            font-weight: 800;
+            font-size: 2.5rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
         }
 
         .weather-desc {
-            font-size: 1.1rem;
+            font-size: 1rem;
             opacity: 0.9;
         }
 
-        /* Tips */
+        .advice-card {
+            background: var(--bg-accent);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: var(--radius-large);
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .advice-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .advice-text {
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
         .tips-card {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border: 2px solid #f59e0b;
-            border-radius: 16px;
-            padding: 2rem;
+            background: linear-gradient(135deg, #FFF8E7 0%, #FFF2CC 100%);
+            border: 1px solid #FFE066;
+            border-radius: var(--radius-large);
+            padding: 1.5rem;
         }
 
         .tips-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #92400e;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #B8860B;
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
@@ -333,98 +361,141 @@
         }
 
         .tips-text {
-            color: #451a03;
-            font-size: 0.9rem;
-            line-height: 1.6;
+            color: #8B4513;
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
 
-        /* Graphique */
+        /* Graphique moderne */
         .chart-container {
-            position: relative;
-            height: 400px;
             background: var(--bg-card);
-            border-radius: 16px;
+            border-radius: var(--radius-large);
             padding: 2rem;
-            box-shadow: var(--shadow-medium);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
         }
 
         .chart-title {
             font-size: 1.5rem;
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 2rem;
             text-align: center;
+            color: var(--text-primary);
         }
 
-        /* Contrôles graphique */
         .chart-controls {
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
-        }
-
-        .select-wrapper {
-            position: relative;
-            display: inline-block;
+            align-items: center;
         }
 
         .select-wrapper select {
             appearance: none;
             background: var(--bg-card);
-            border: 3px solid #000;
-            border-radius: 8px;
+            border: 2px solid var(--border-medium);
+            border-radius: var(--radius-medium);
             padding: 0.75rem 2.5rem 0.75rem 1rem;
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
+            color: var(--text-primary);
         }
 
-        /* Données détaillées */
-        .details-toggle {
+        /* Section détails corrigée */
+        .details-section {
+            background: var(--bg-card);
+            border-radius: var(--radius-large);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
             margin-top: 2rem;
+        }
+
+        .details-toggle {
             text-align: center;
+            margin-bottom: 2rem;
         }
 
         .details-content {
             display: none;
-            margin-top: 2rem;
-            background: var(--bg-surface);
-            border-radius: 16px;
-            padding: 2rem;
+        }
+
+        .details-content.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         .details-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
+            overflow: hidden; /* Correction overflow */
         }
 
         .detail-stat {
             text-align: center;
-            padding: 1.5rem;
-            background: var(--bg-card);
-            border-radius: 12px;
-            box-shadow: var(--shadow-light);
+            padding: 1.5rem 1rem;
+            background: var(--bg-surface);
+            border-radius: var(--radius-medium);
+            border: 1px solid var(--border-light);
+            transition: all 0.2s ease;
+        }
+
+        .detail-stat:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-soft);
         }
 
         .detail-stat-value {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--primary);
         }
 
         .detail-stat-label {
             color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 500;
+            line-height: 1.3;
         }
 
-        /* Responsive */
+        /* Navigation vers détails */
+        .nav-section {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: var(--radius-medium);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .nav-link:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* Responsive amélioré */
         @media (max-width: 1024px) {
-            .main-container {
+            .grid-layout {
                 grid-template-columns: 1fr;
-                padding: 1rem;
+                gap: 1.5rem;
             }
             
             .right-column {
@@ -436,11 +507,21 @@
             }
 
             .stats-overview {
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 1rem;
+            }
+
+            .details-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 0.75rem;
             }
         }
 
         @media (max-width: 640px) {
+            .main-container {
+                padding: 0 1rem 2rem;
+            }
+
             .header h1 {
                 font-size: 2rem;
             }
@@ -451,17 +532,22 @@
 
             .chart-controls {
                 flex-direction: column;
+                align-items: stretch;
             }
 
             .btn {
                 width: 100%;
                 justify-content: center;
             }
+
+            .details-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
-        /* Animations */
+        /* Animations fluides */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -469,7 +555,7 @@
             animation: fadeIn 0.6s ease-out;
         }
 
-        /* Loading state */
+        /* Loading élégant */
         .loading {
             text-align: center;
             padding: 3rem;
@@ -478,10 +564,10 @@
 
         .spinner {
             display: inline-block;
-            width: 2rem;
-            height: 2rem;
-            border: 3px solid var(--border-light);
-            border-top: 3px solid var(--text-accent);
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 2px solid var(--border-light);
+            border-top: 2px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -490,153 +576,195 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Amélioration des détails */
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .controls-section {
+            background: var(--bg-surface);
+            border-radius: var(--radius-large);
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+        }
+
+        .controls-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .controls-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
             <h1>🌱 My Pico</h1>
-            <p class="subtitle">Surveillance CO2 intelligente et conseils environnementaux</p>
+            <p class="subtitle">Surveillance CO2 intelligente et conseils environnementaux en temps réel</p>
         </div>
     </div>
 
     <div class="main-container">
-        <div class="left-column">
-            <!-- Stats principales -->
-            <div class="stats-overview fade-in">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalDevices">-</div>
-                    <div class="stat-label">Capteurs actifs</div>
+        <!-- Stats principales -->
+        <div class="stats-overview fade-in">
+            <div class="stat-card">
+                <div class="stat-value" id="totalDevices">-</div>
+                <div class="stat-label">Capteurs actifs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgCo2">-</div>
+                <div class="stat-label">PPM Moyen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMeasurements">-</div>
+                <div class="stat-label">Mesures 24h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="healthScore">-</div>
+                <div class="stat-label">Score Santé</div>
+            </div>
+        </div>
+
+        <div class="grid-layout">
+            <div class="left-column">
+                <!-- Niveau CO2 principal -->
+                <div class="co2-main fade-in">
+                    <div class="co2-current" id="currentCo2">-</div>
+                    <div class="co2-unit">PPM CO2</div>
+                    <div class="air-quality-badge" id="airQualityBadge">
+                        <span>Analyse en cours...</span>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Dernière mise à jour: <span id="lastUpdate">-</span>
+                    </p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="avgCo2">-</div>
-                    <div class="stat-label">PPM Moyen</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="totalMeasurements">-</div>
-                    <div class="stat-label">Mesures 24h</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="healthScore">-</div>
-                    <div class="stat-label">Score Santé</div>
+
+                <!-- Graphique principal -->
+                <div class="chart-container fade-in">
+                    <h3 class="chart-title">📈 Évolution CO2</h3>
+                    <div class="chart-controls">
+                        <div class="select-wrapper">
+                            <select id="timeRange">
+                                <option value="1">1 heure</option>
+                                <option value="6">6 heures</option>
+                                <option value="24" selected>24 heures</option>
+                                <option value="72">3 jours</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="refreshChart()">
+                            🔄 Actualiser
+                        </button>
+                    </div>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="co2Chart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <!-- Niveau CO2 principal -->
-            <div class="co2-main fade-in">
-                <div class="co2-current" id="currentCo2">-</div>
-                <div class="co2-unit">PPM CO2</div>
-                <div class="air-quality-badge" id="airQualityBadge">
-                    <span>Analyse en cours...</span>
+            <div class="right-column">
+                <!-- Météo -->
+                <div class="weather-card fade-in" id="weatherCard">
+                    <h4 style="margin-bottom: 1rem; font-weight: 600;">🌤️ Météo locale</h4>
+                    <div class="weather-temp" id="weatherTemp">-°C</div>
+                    <div class="weather-desc" id="weatherDesc">Chargement...</div>
+                    <p style="margin-top: 1rem; opacity: 0.8; font-size: 0.85rem;" id="weatherLocation">-</p>
                 </div>
-                <p style="margin-top: 1rem; color: var(--text-secondary);">
-                    Dernière mise à jour: <span id="lastUpdate">-</span>
-                </p>
-            </div>
 
-            <!-- Graphique -->
-            <div class="chart-container fade-in">
-                <h3 class="chart-title">📈 Évolution CO2</h3>
-                <div class="chart-controls">
-                    <div class="select-wrapper">
-                        <select id="timeRange">
-                            <option value="1">1 heure</option>
-                            <option value="6">6 heures</option>
-                            <option value="24" selected>24 heures</option>
-                            <option value="72">3 jours</option>
-                        </select>
+                <!-- Conseils -->
+                <div class="advice-card fade-in">
+                    <h4 class="advice-title">💡 Conseils personnalisés</h4>
+                    <div class="advice-text" id="adviceText">
+                        Analyse de la qualité de l'air en cours...
                     </div>
-                    <button class="btn btn-primary" onclick="refreshChart()">
-                        🔄 Actualiser
-                    </button>
                 </div>
-                <canvas id="co2Chart"></canvas>
-            </div>
 
-            <!-- Données détaillées -->
-            <div class="details-toggle fade-in">
-                <button class="btn btn-primary" onclick="toggleDetails()">
-                    📊 Voir les données détaillées
-                </button>
-            </div>
+                <!-- Tips environnementaux -->
+                <div class="tips-card fade-in">
+                    <h5 class="tips-title">
+                        🌱 Le saviez-vous ?
+                    </h5>
+                    <div class="tips-text" id="tipsText">
+                        Chargement des conseils environnementaux...
+                    </div>
+                </div>
 
-            <div class="details-content" id="detailsContent">
-                <h3 style="text-align: center; margin-bottom: 2rem; font-size: 1.5rem;">
-                    📊 Analyses détaillées
-                </h3>
-                <div class="details-grid">
-                    <div class="detail-stat excellent">
-                        <div class="detail-stat-value" id="excellentCount">-</div>
-                        <div class="detail-stat-label">Excellent (&lt;400)</div>
-                    </div>
-                    <div class="detail-stat good">
-                        <div class="detail-stat-value" id="goodCount">-</div>
-                        <div class="detail-stat-label">Bon (400-600)</div>
-                    </div>
-                    <div class="detail-stat medium">
-                        <div class="detail-stat-value" id="mediumCount">-</div>
-                        <div class="detail-stat-label">Moyen (600-1000)</div>
-                    </div>
-                    <div class="detail-stat bad">
-                        <div class="detail-stat-value" id="badCount">-</div>
-                        <div class="detail-stat-label">Mauvais (1000-1500)</div>
-                    </div>
-                    <div class="detail-stat danger">
-                        <div class="detail-stat-value" id="dangerCount">-</div>
-                        <div class="detail-stat-label">Danger (&gt;1500)</div>
-                    </div>
-                    <div class="detail-stat">
-                        <div class="detail-stat-value" id="minCo2">-</div>
-                        <div class="detail-stat-label">Min PPM</div>
-                    </div>
-                    <div class="detail-stat">
-                        <div class="detail-stat-value" id="maxCo2">-</div>
-                        <div class="detail-stat-label">Max PPM</div>
+                <!-- Contrôles -->
+                <div class="controls-section fade-in">
+                    <h4 class="controls-title">⚙️ Contrôles</h4>
+                    <div class="controls-grid">
+                        <button class="btn btn-primary" onclick="refreshAll()">
+                            🔄 Tout actualiser
+                        </button>
+                        <button class="btn btn-success" onclick="exportData()">
+                            💾 Exporter données
+                        </button>
+                        <button class="btn btn-warning" onclick="showSettings()">
+                            ⚙️ Paramètres
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="right-column">
-            <!-- Météo -->
-            <div class="weather-card fade-in" id="weatherCard">
-                <h3 style="margin-bottom: 1rem;">🌤️ Météo locale</h3>
-                <div class="weather-temp" id="weatherTemp">-°C</div>
-                <div class="weather-desc" id="weatherDesc">Chargement...</div>
-                <p style="margin-top: 1rem; opacity: 0.8; font-size: 0.9rem;" id="weatherLocation">-</p>
+        <!-- Navigation vers page détaillée -->
+        <div class="nav-section fade-in">
+            <a href="/charts" class="nav-link">
+                📊 Voir les analyses détaillées
+                <span style="font-size: 1.2em;">→</span>
+            </a>
+        </div>
+
+        <!-- Section détails (corrigée) -->
+        <div class="details-section fade-in">
+            <div class="details-toggle">
+                <button class="btn btn-primary" onclick="toggleDetails()">
+                    📊 Aperçu des statistiques
+                </button>
             </div>
 
-            <!-- Conseils -->
-            <div class="advice-card fade-in">
-                <h3 class="advice-title">💡 Conseils personnalisés</h3>
-                <div class="advice-text" id="adviceText">
-                    Analyse de la qualité de l'air en cours...
-                </div>
-            </div>
-
-            <!-- Tips environnementaux -->
-            <div class="tips-card fade-in">
-                <h4 class="tips-title">
-                    🌱 Le saviez-vous ?
-                </h4>
-                <div class="tips-text" id="tipsText">
-                    Chargement des conseils environnementaux...
-                </div>
-            </div>
-
-            <!-- Contrôles -->
-            <div class="card fade-in" style="text-align: center;">
-                <h3 style="margin-bottom: 1.5rem;">⚙️ Contrôles</h3>
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <button class="btn btn-primary" onclick="refreshAll()">
-                        🔄 Tout actualiser
-                    </button>
-                    <button class="btn btn-success" onclick="exportData()">
-                        💾 Exporter données
-                    </button>
-                    <button class="btn btn-warning" onclick="showSettings()">
-                        ⚙️ Paramètres
-                    </button>
+            <div class="details-content" id="detailsContent">
+                <h3 class="section-title">📊 Résumé des 24 dernières heures</h3>
+                <div class="details-grid">
+                    <div class="detail-stat excellent">
+                        <div class="detail-stat-value" id="excellentCount">-</div>
+                        <div class="detail-stat-label">Excellent<br>&lt;400 ppm</div>
+                    </div>
+                    <div class="detail-stat good">
+                        <div class="detail-stat-value" id="goodCount">-</div>
+                        <div class="detail-stat-label">Bon<br>400-600 ppm</div>
+                    </div>
+                    <div class="detail-stat medium">
+                        <div class="detail-stat-value" id="mediumCount">-</div>
+                        <div class="detail-stat-label">Moyen<br>600-1000 ppm</div>
+                    </div>
+                    <div class="detail-stat bad">
+                        <div class="detail-stat-value" id="badCount">-</div>
+                        <div class="detail-stat-label">Mauvais<br>1000-1500 ppm</div>
+                    </div>
+                    <div class="detail-stat danger">
+                        <div class="detail-stat-value" id="dangerCount">-</div>
+                        <div class="detail-stat-label">Danger<br>&gt;1500 ppm</div>
+                    </div>
+                    <div class="detail-stat">
+                        <div class="detail-stat-value" id="minCo2">-</div>
+                        <div class="detail-stat-label">Minimum<br>ppm</div>
+                    </div>
+                    <div class="detail-stat">
+                        <div class="detail-stat-value" id="maxCo2">-</div>
+                        <div class="detail-stat-label">Maximum<br>ppm</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -696,7 +824,6 @@
 
         async function loadData() {
             try {
-                // Charger données principales
                 const [latestResponse, statsResponse] = await Promise.all([
                     fetch('/api/data/latest'),
                     fetch('/api/stats')
@@ -725,18 +852,10 @@
                 document.getElementById('lastUpdate').textContent = 
                     new Date(device.timestamp).toLocaleString('fr-FR');
                 
-                // Badge qualité air
                 const badge = document.getElementById('airQualityBadge');
                 const quality = getAirQuality(device.co2_ppm);
                 badge.className = `air-quality-badge ${quality}`;
                 badge.innerHTML = `<span>${getQualityText(quality)}</span>`;
-                
-                // Couleur du niveau CO2
-                const co2Element = document.getElementById('currentCo2');
-                co2Element.style.background = getQualityGradient(quality);
-                co2Element.style.webkitBackgroundClip = 'text';
-                co2Element.style.webkitTextFillColor = 'transparent';
-                co2Element.style.backgroundClip = 'text';
             } else {
                 document.getElementById('currentCo2').textContent = '-';
                 document.getElementById('lastUpdate').textContent = 'Aucune donnée';
@@ -748,11 +867,9 @@
             document.getElementById('avgCo2').textContent = statsData.avg_co2 || '-';
             document.getElementById('totalMeasurements').textContent = statsData.total_measurements || 0;
             
-            // Score santé basé sur la qualité moyenne
             const healthScore = calculateHealthScore(statsData.avg_co2);
             document.getElementById('healthScore').textContent = healthScore + '%';
 
-            // Stats détaillées
             document.getElementById('excellentCount').textContent = statsData.excellent_count || 0;
             document.getElementById('goodCount').textContent = statsData.good_count || 0;
             document.getElementById('mediumCount').textContent = statsData.medium_count || 0;
@@ -794,17 +911,6 @@
             return texts[quality] || 'Inconnu';
         }
 
-        function getQualityGradient(quality) {
-            const gradients = {
-                excellent: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-                good: 'linear-gradient(135deg, #22c55e 0%, #4ade80 100%)',
-                medium: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
-                bad: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)',
-                danger: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)'
-            };
-            return gradients[quality] || 'var(--primary-gradient)';
-        }
-
         function calculateHealthScore(avgCo2) {
             if (!avgCo2) return 0;
             if (avgCo2 < 400) return 100;
@@ -832,46 +938,37 @@
                     datasets: [{
                         label: 'CO2 (ppm)',
                         data: [],
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#007AFF',
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        borderWidth: 2,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#667eea',
+                        pointBackgroundColor: '#007AFF',
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
-                        pointRadius: 4
+                        pointRadius: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        }
+                        legend: { display: false }
                     },
                     scales: {
                         y: {
                             beginAtZero: false,
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            },
+                            grid: { color: '#E5E5E7' },
                             ticks: {
+                                color: '#86868B',
                                 callback: function(value) {
                                     return value + ' ppm';
                                 }
                             }
                         },
                         x: {
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        }
-                    },
-                    elements: {
-                        point: {
-                            hoverRadius: 8
+                            grid: { color: '#E5E5E7' },
+                            ticks: { color: '#86868B' }
                         }
                     }
                 }
@@ -899,10 +996,6 @@
                     chart.data.labels = labels;
                     chart.data.datasets[0].data = values;
                     chart.update();
-                } else {
-                    chart.data.labels = [];
-                    chart.data.datasets[0].data = [];
-                    chart.update();
                 }
             } catch (error) {
                 console.error('Erreur graphique:', error);
@@ -911,29 +1004,11 @@
 
         async function initWeatherAPI() {
             try {
-                // Utiliser l'API OpenWeatherMap gratuite
-                // Vous devrez remplacer YOUR_API_KEY par une vraie clé
-                const API_KEY = 'demo'; // Remplacez par votre clé API
-                const city = 'Paris'; // Ville par défaut
-                
-                // Pour la démo, simuler des données météo
                 setTimeout(() => {
                     document.getElementById('weatherTemp').textContent = '22°C';
                     document.getElementById('weatherDesc').textContent = 'Ensoleillé';
                     document.getElementById('weatherLocation').textContent = 'Paris, France';
                 }, 1000);
-                
-                /* Code pour vraie API météo :
-                const response = await fetch(
-                    `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=fr`
-                );
-                const data = await response.json();
-                
-                document.getElementById('weatherTemp').textContent = Math.round(data.main.temp) + '°C';
-                document.getElementById('weatherDesc').textContent = data.weather[0].description;
-                document.getElementById('weatherLocation').textContent = data.name + ', ' + data.sys.country;
-                */
-                
             } catch (error) {
                 console.error('Erreur météo:', error);
                 document.getElementById('weatherDesc').textContent = 'Indisponible';
@@ -944,12 +1019,12 @@
             const content = document.getElementById('detailsContent');
             const button = event.target;
             
-            if (content.style.display === 'none' || !content.style.display) {
-                content.style.display = 'block';
-                button.textContent = '📊 Masquer les détails';
+            content.classList.toggle('show');
+            
+            if (content.classList.contains('show')) {
+                button.textContent = '📊 Masquer les statistiques';
             } else {
-                content.style.display = 'none';
-                button.textContent = '📊 Voir les données détaillées';
+                button.textContent = '📊 Aperçu des statistiques';
             }
         }
 
@@ -959,7 +1034,6 @@
             initWeatherAPI(); 
             rotateTips();
             
-            // Animation du bouton
             const btn = event.target;
             btn.textContent = '⏳ Actualisation...';
             setTimeout(() => {
@@ -985,17 +1059,16 @@
         }
 
         function showError(message) {
-            // Créer une notification d'erreur temporaire
             const error = document.createElement('div');
             error.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: #ef4444;
+                background: var(--danger);
                 color: white;
                 padding: 1rem 2rem;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                border-radius: var(--radius-medium);
+                box-shadow: var(--shadow-large);
                 z-index: 1000;
                 animation: slideIn 0.3s ease;
             `;
@@ -1007,7 +1080,6 @@
             }, 5000);
         }
 
-        // Gestion du changement de plage temporelle
         document.getElementById('timeRange').addEventListener('change', refreshChart);
     </script>
 </body>
