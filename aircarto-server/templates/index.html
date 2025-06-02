@@ -751,23 +751,6 @@
     <script>
         let chart = null;
         let currentData = null;
-        let isDemo = false; // Mode démo si pas de vraies données
-
-        // Données de démonstration
-        const demoData = {
-            current: 650,
-            history: Array.from({length: 24}, (_, i) => ({
-                time: new Date(Date.now() - (23-i) * 60 * 60 * 1000).toISOString(),
-                co2_ppm: 400 + Math.sin(i * 0.3) * 200 + Math.random() * 100
-            })),
-            stats: {
-                total_devices: 1,
-                avg_co2: 625,
-                total_measurements: 1440,
-                max_co2: 890,
-                min_co2: 420
-            }
-        };
 
         const tips = [
             "Les plantes d'intérieur peuvent réduire le CO2 et améliorer naturellement la qualité de l'air.",
@@ -807,13 +790,16 @@
             initChart();
             rotateTips();
             
-            // Auto-refresh
+            // Auto-refresh toutes les 30 secondes
             setInterval(loadData, 30000);
+            // Rotation des tips toutes les 8 secondes
             setInterval(rotateTips, 8000);
         });
 
         async function loadData() {
             try {
+                showLoading(true);
+                
                 const [latestResponse, statsResponse] = await Promise.all([
                     fetch('/api/data/latest'),
                     fetch('/api/stats')
@@ -823,41 +809,16 @@
                     const latestData = await latestResponse.json();
                     const statsData = await statsResponse.json();
                     
-                    // Vérifier si on a des vraies données
-                    if (latestData.devices && latestData.devices.length > 0) {
-                        isDemo = false;
-                        currentData = { latest: latestData, stats: statsData };
-                        updateDisplay(latestData, statsData);
-                    } else {
-                        // Mode démo
-                        isDemo = true;
-                        currentData = demoData;
-                        updateDisplay({devices: [{
-                            co2_ppm: demoData.current,
-                            timestamp: new Date().toISOString(),
-                            air_quality: getAirQuality(demoData.current)
-                        }]}, demoData.stats);
-                    }
+                    currentData = { latest: latestData, stats: statsData };
+                    updateDisplay(latestData, statsData);
+                    showLoading(false);
                 } else {
-                    // Fallback en mode démo
-                    isDemo = true;
-                    currentData = demoData;
-                    updateDisplay({devices: [{
-                        co2_ppm: demoData.current,
-                        timestamp: new Date().toISOString(),
-                        air_quality: getAirQuality(demoData.current)
-                    }]}, demoData.stats);
+                    throw new Error(`API Error: ${latestResponse.status} / ${statsResponse.status}`);
                 }
             } catch (error) {
-                console.error('Erreur:', error);
-                // Mode démo en cas d'erreur
-                isDemo = true;
-                currentData = demoData;
-                updateDisplay({devices: [{
-                    co2_ppm: demoData.current,
-                    timestamp: new Date().toISOString(),
-                    air_quality: getAirQuality(demoData.current)
-                }]}, demoData.stats);
+                console.error('Erreur chargement données:', error);
+                showNoData();
+                showLoading(false);
             }
         }
 
@@ -865,7 +826,7 @@
             const device = latestData.devices && latestData.devices[0];
             
             if (device) {
-                // Ajouter animation au changement de valeur
+                // Mise à jour du CO2 principal avec animation
                 const co2Element = document.getElementById('currentCo2');
                 co2Element.style.transform = 'scale(1.1)';
                 setTimeout(() => {
@@ -873,9 +834,11 @@
                     co2Element.style.transform = 'scale(1)';
                 }, 150);
                 
+                // Mise à jour de l'horodatage
                 document.getElementById('lastUpdate').textContent = 
                     new Date(device.timestamp).toLocaleString('fr-FR');
                 
+                // Mise à jour du badge de qualité
                 const badge = document.getElementById('airQualityBadge');
                 const quality = getAirQuality(device.co2_ppm);
                 const qualityText = getQualityText(quality);
@@ -885,44 +848,79 @@
                 
                 // Mise à jour des conseils personnalisés
                 updatePersonalizedAdvice(quality);
+                
+                // Marquer comme connecté
+                updateConnectionStatus(true);
+            } else {
+                // Pas de device mais API fonctionne
+                showWaitingForData();
             }
 
-            // Mise à jour des stats
-            document.getElementById('totalDevices').textContent = statsData.total_devices || (isDemo ? 1 : 0);
-            document.getElementById('avgCo2').textContent = Math.round(statsData.avg_co2) || (isDemo ? demoData.stats.avg_co2 : '-');
-            document.getElementById('totalMeasurements').textContent = statsData.total_measurements || (isDemo ? demoData.stats.total_measurements : 0);
+            // Mise à jour des statistiques
+            updateStats(statsData);
+        }
+
+        function updateStats(statsData) {
+            document.getElementById('totalDevices').textContent = statsData.total_devices || 0;
+            document.getElementById('avgCo2').textContent = Math.round(statsData.avg_co2) || '-';
+            document.getElementById('totalMeasurements').textContent = statsData.total_measurements || 0;
             
-            const healthScore = calculateHealthScore(statsData.avg_co2 || (isDemo ? demoData.stats.avg_co2 : 0));
+            const healthScore = calculateHealthScore(statsData.avg_co2);
             document.getElementById('healthScore').textContent = healthScore + '%';
-
-            if (isDemo) {
-                // Ajouter indicateur mode démo
-                const navbar = document.querySelector('.navbar');
-                if (!document.querySelector('.demo-indicator')) {
-                    const demoIndicator = document.createElement('div');
-                    demoIndicator.className = 'demo-indicator';
-                    demoIndicator.innerHTML = '🧪 Mode démonstration - Données simulées';
-                    demoIndicator.style.cssText = `
-                        position: fixed;
-                        top: 80px;
-                        right: 20px;
-                        background: var(--warning);
-                        color: white;
-                        padding: 0.5rem 1rem;
-                        border-radius: var(--radius-small);
-                        font-size: 0.8rem;
-                        z-index: 1000;
-                        box-shadow: var(--shadow-soft);
-                    `;
-                    document.body.appendChild(demoIndicator);
-                }
-            }
         }
 
         function updatePersonalizedAdvice(quality) {
             const adviceElement = document.getElementById('personalizedAdvice');
             const advice = adviceByLevel[quality];
             adviceElement.innerHTML = `<strong>${advice.title}</strong><br>${advice.text}`;
+        }
+
+        function showWaitingForData() {
+            document.getElementById('currentCo2').textContent = '---';
+            document.getElementById('lastUpdate').textContent = 'En attente des données du capteur...';
+            
+            const badge = document.getElementById('airQualityBadge');
+            badge.className = 'air-quality-badge';
+            badge.innerHTML = '<span>⏳</span><span>En attente du Pico...</span>';
+            
+            const adviceElement = document.getElementById('personalizedAdvice');
+            adviceElement.innerHTML = '<strong>📡 Connexion en cours</strong><br>Vérifiez que votre capteur My Pico est allumé et connecté au WiFi.';
+            
+            updateConnectionStatus(false);
+        }
+
+        function showNoData() {
+            document.getElementById('currentCo2').textContent = '---';
+            document.getElementById('lastUpdate').textContent = 'Serveur non accessible';
+            
+            const badge = document.getElementById('airQualityBadge');
+            badge.className = 'air-quality-badge danger';
+            badge.innerHTML = '<span>❌</span><span>Connexion échouée</span>';
+            
+            const adviceElement = document.getElementById('personalizedAdvice');
+            adviceElement.innerHTML = '<strong>🔧 Problème de connexion</strong><br>Vérifiez que le serveur My Pico fonctionne correctement.';
+            
+            updateConnectionStatus(false, 'Hors ligne');
+        }
+
+        function updateConnectionStatus(isConnected, customText = null) {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-indicator span');
+            
+            if (isConnected) {
+                statusDot.style.background = 'var(--success)';
+                statusText.textContent = customText || 'En ligne';
+            } else {
+                statusDot.style.background = 'var(--danger)';
+                statusText.textContent = customText || 'Déconnecté';
+            }
+        }
+
+        function showLoading(show) {
+            const loadingElements = document.querySelectorAll('.loading-indicator');
+            loadingElements.forEach(el => {
+                el.style.display = show ? 'inline-block' : 'none';
+            });
         }
 
         function getAirQuality(co2) {
@@ -1038,48 +1036,61 @@
 
         async function refreshChart() {
             try {
-                if (isDemo) {
-                    // Utiliser les données de démo
-                    const labels = demoData.history.map(point => 
-                        new Date(point.time).toLocaleTimeString('fr-FR', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        })
-                    );
-                    const values = demoData.history.map(point => Math.round(point.co2_ppm));
+                const hours = document.getElementById('timeRange').value;
+                const response = await fetch(`/api/data/history?hours=${hours}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
                     
-                    chart.data.labels = labels;
-                    chart.data.datasets[0].data = values;
-                    chart.update();
-                } else {
-                    const hours = document.getElementById('timeRange').value;
-                    const response = await fetch(`/api/data/history?hours=${hours}`);
-                    
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (data.data && data.data.length > 0) {
+                        const labels = data.data.map(point => 
+                            new Date(point.time).toLocaleTimeString('fr-FR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })
+                        );
+                        const values = data.data.map(point => point.co2_ppm);
                         
-                        if (data.data && data.data.length > 0) {
-                            const labels = data.data.map(point => 
-                                new Date(point.time).toLocaleTimeString('fr-FR', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                })
-                            );
-                            const values = data.data.map(point => point.co2_ppm);
-                            
-                            chart.data.labels = labels;
-                            chart.data.datasets[0].data = values;
-                            chart.update();
-                        }
+                        chart.data.labels = labels;
+                        chart.data.datasets[0].data = values;
+                        chart.update();
+                    } else {
+                        // Pas de données historiques
+                        chart.data.labels = ['Pas de données'];
+                        chart.data.datasets[0].data = [0];
+                        chart.update();
                     }
+                } else {
+                    console.error('Erreur API historique:', response.status);
                 }
             } catch (error) {
                 console.error('Erreur graphique:', error);
+                // Graphique vide en cas d'erreur
+                chart.data.labels = ['Erreur de connexion'];
+                chart.data.datasets[0].data = [0];
+                chart.update();
             }
         }
 
         // Event listeners
         document.getElementById('timeRange').addEventListener('change', refreshChart);
+
+        // Fonction pour tester la connexion
+        async function testConnection() {
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    console.log('✅ Serveur accessible');
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ Serveur non accessible:', error);
+            }
+            return false;
+        }
+
+        // Test initial de connexion
+        testConnection();
     </script>
 </body>
 </html> 
