@@ -3,386 +3,1012 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirCarto Dashboard</title>
+    <title>My Pico - Dashboard CO2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --green-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-surface: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-accent: #3b82f6;
+            --border-light: #e2e8f0;
+            --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
         }
-        
+
+        /* Header avec design moderne */
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .header h1 {
-            color: #2c5282;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-        
-        .header .subtitle {
-            color: #666;
-            font-size: 1.2em;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 1.1em;
-        }
-        
-        .devices-section {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        
-        .devices-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .device-card {
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 20px;
+            background: var(--primary-gradient);
+            padding: 2rem 0;
             position: relative;
             overflow: hidden;
         }
-        
-        .device-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,0 1000,0 1000,80 0,100"/></svg>');
+            background-size: cover;
         }
-        
-        .device-name {
-            font-weight: bold;
-            font-size: 1.2em;
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 1;
         }
-        
-        .device-status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        
-        .co2-display {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        
-        .co2-value {
-            font-size: 3em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .co2-unit {
-            color: #666;
-            font-size: 1.2em;
-        }
-        
-        .air-quality {
-            text-align: center;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .timestamp {
-            color: #666;
-            font-size: 0.9em;
-            text-align: center;
-        }
-        
-        /* Couleurs selon qualité de l'air */
-        .excellent { background: #48bb78; color: white; }
-        .good { background: #68d391; color: white; }
-        .medium { background: #ed8936; color: white; }
-        .bad { background: #f56565; color: white; }
-        .danger { background: #e53e3e; color: white; }
-        
-        .controls {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .btn {
-            background: #4299e1;
+
+        .header h1 {
             color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 25px;
-            font-size: 1.1em;
-            cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
         }
-        
-        .btn:hover {
-            background: #3182ce;
+
+        .header .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.25rem;
+            font-weight: 400;
+        }
+
+        /* Container principal */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            gap: 2rem;
+            grid-template-columns: 1fr 320px;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Cards avec style flat moderne */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-medium);
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-large);
         }
-        
-        .refresh-info {
+
+        /* Boutons avec style enfoncé */
+        .btn {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 4px solid #000;
+            border-bottom-width: 8px;
+            border-left-width: 6px;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translate(1px, 1px);
+            border-bottom-width: 6px;
+            border-left-width: 4px;
+        }
+
+        .btn:active {
+            transform: translate(2px, 2px);
+            border-bottom-width: 4px;
+            border-left-width: 4px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--green-gradient);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-gradient);
+            color: white;
+        }
+
+        /* Stats principales */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
             text-align: center;
-            color: rgba(255,255,255,0.8);
-            margin-top: 20px;
+            box-shadow: var(--shadow-medium);
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Niveau CO2 principal */
+        .co2-main {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-large);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .co2-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: var(--primary-gradient);
+        }
+
+        .co2-current {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+
+        .co2-unit {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .air-quality-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Couleurs air quality */
+        .excellent { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: white; }
+        .good { background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%); color: white; }
+        .medium { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: white; }
+        .bad { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); color: white; }
+        .danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; }
+
+        /* Conseils */
+        .advice-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .advice-card::before {
+            content: '💡';
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            font-size: 2rem;
+            background: var(--bg-card);
+            padding: 0.5rem;
+            border-radius: 50%;
+            border: 2px solid #0ea5e9;
+        }
+
+        .advice-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: 1rem;
+        }
+
+        .advice-text {
+            color: #0f172a;
+            line-height: 1.7;
+        }
+
+        /* Météo */
+        .weather-card {
+            background: var(--green-gradient);
+            color: white;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .weather-temp {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .weather-desc {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Tips */
+        .tips-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .tips-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tips-text {
+            color: #451a03;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Graphique */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        /* Contrôles graphique */
+        .chart-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .select-wrapper select {
+            appearance: none;
+            background: var(--bg-card);
+            border: 3px solid #000;
+            border-radius: 8px;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Données détaillées */
+        .details-toggle {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .details-content {
+            display: none;
+            margin-top: 2rem;
+            background: var(--bg-surface);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-stat {
+            text-align: center;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .detail-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .right-column {
+                order: -1;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-overview {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .co2-current {
+                font-size: 3rem;
+            }
+
+            .chart-controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Loading state */
         .loading {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 3rem;
+            color: var(--text-secondary);
         }
-        
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            background: #f7fafc;
-            border-radius: 10px;
+
+        .spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--text-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🌱 AirCarto Dashboard</h1>
-        <p class="subtitle">Surveillance CO2 en temps réel</p>
+        <div class="header-content">
+            <h1>🌱 My Pico</h1>
+            <p class="subtitle">Surveillance CO2 intelligente et conseils environnementaux</p>
+        </div>
     </div>
-    
-    <div class="container">
-        <!-- Statistiques globales -->
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="total-devices">-</div>
-                <div class="stat-label">Capteurs actifs</div>
+
+    <div class="main-container">
+        <div class="left-column">
+            <!-- Stats principales -->
+            <div class="stats-overview fade-in">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDevices">-</div>
+                    <div class="stat-label">Capteurs actifs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgCo2">-</div>
+                    <div class="stat-label">PPM Moyen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalMeasurements">-</div>
+                    <div class="stat-label">Mesures 24h</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="healthScore">-</div>
+                    <div class="stat-label">Score Santé</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="avg-co2">-</div>
-                <div class="stat-label">CO2 moyen (ppm)</div>
+
+            <!-- Niveau CO2 principal -->
+            <div class="co2-main fade-in">
+                <div class="co2-current" id="currentCo2">-</div>
+                <div class="co2-unit">PPM CO2</div>
+                <div class="air-quality-badge" id="airQualityBadge">
+                    <span>Analyse en cours...</span>
+                </div>
+                <p style="margin-top: 1rem; color: var(--text-secondary);">
+                    Dernière mise à jour: <span id="lastUpdate">-</span>
+                </p>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="total-measurements">-</div>
-                <div class="stat-label">Mesures (24h)</div>
+
+            <!-- Graphique -->
+            <div class="chart-container fade-in">
+                <h3 class="chart-title">📈 Évolution CO2</h3>
+                <div class="chart-controls">
+                    <div class="select-wrapper">
+                        <select id="timeRange">
+                            <option value="1">1 heure</option>
+                            <option value="6">6 heures</option>
+                            <option value="24" selected>24 heures</option>
+                            <option value="72">3 jours</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="refreshChart()">
+                        🔄 Actualiser
+                    </button>
+                </div>
+                <canvas id="co2Chart"></canvas>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="air-quality-score">-</div>
-                <div class="stat-label">Qualité globale</div>
+
+            <!-- Données détaillées -->
+            <div class="details-toggle fade-in">
+                <button class="btn btn-primary" onclick="toggleDetails()">
+                    📊 Voir les données détaillées
+                </button>
+            </div>
+
+            <div class="details-content" id="detailsContent">
+                <h3 style="text-align: center; margin-bottom: 2rem; font-size: 1.5rem;">
+                    📊 Analyses détaillées
+                </h3>
+                <div class="details-grid">
+                    <div class="detail-stat excellent">
+                        <div class="detail-stat-value" id="excellentCount">-</div>
+                        <div class="detail-stat-label">Excellent (&lt;400)</div>
+                    </div>
+                    <div class="detail-stat good">
+                        <div class="detail-stat-value" id="goodCount">-</div>
+                        <div class="detail-stat-label">Bon (400-600)</div>
+                    </div>
+                    <div class="detail-stat medium">
+                        <div class="detail-stat-value" id="mediumCount">-</div>
+                        <div class="detail-stat-label">Moyen (600-1000)</div>
+                    </div>
+                    <div class="detail-stat bad">
+                        <div class="detail-stat-value" id="badCount">-</div>
+                        <div class="detail-stat-label">Mauvais (1000-1500)</div>
+                    </div>
+                    <div class="detail-stat danger">
+                        <div class="detail-stat-value" id="dangerCount">-</div>
+                        <div class="detail-stat-label">Danger (&gt;1500)</div>
+                    </div>
+                    <div class="detail-stat">
+                        <div class="detail-stat-value" id="minCo2">-</div>
+                        <div class="detail-stat-label">Min PPM</div>
+                    </div>
+                    <div class="detail-stat">
+                        <div class="detail-stat-value" id="maxCo2">-</div>
+                        <div class="detail-stat-label">Max PPM</div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <!-- Contrôles -->
-        <div class="controls">
-            <button class="btn" onclick="refreshData()">🔄 Actualiser</button>
-            <button class="btn" onclick="window.location.href='/charts'">📊 Graphiques</button>
-            <button class="btn" onclick="toggleAutoRefresh()">⏱️ Auto-refresh</button>
-        </div>
-        
-        <!-- Devices en temps réel -->
-        <div class="devices-section">
-            <h2 style="margin-bottom: 20px; text-align: center;">📡 Capteurs en temps réel</h2>
-            <div id="devices-container" class="loading">
-                <p>🔄 Chargement des données...</p>
+
+        <div class="right-column">
+            <!-- Météo -->
+            <div class="weather-card fade-in" id="weatherCard">
+                <h3 style="margin-bottom: 1rem;">🌤️ Météo locale</h3>
+                <div class="weather-temp" id="weatherTemp">-°C</div>
+                <div class="weather-desc" id="weatherDesc">Chargement...</div>
+                <p style="margin-top: 1rem; opacity: 0.8; font-size: 0.9rem;" id="weatherLocation">-</p>
             </div>
-        </div>
-        
-        <div class="refresh-info">
-            <p>📡 Dernière mise à jour: <span id="last-update">-</span></p>
-            <p>🔄 Actualisation automatique: <span id="auto-refresh-status">Activé</span></p>
+
+            <!-- Conseils -->
+            <div class="advice-card fade-in">
+                <h3 class="advice-title">💡 Conseils personnalisés</h3>
+                <div class="advice-text" id="adviceText">
+                    Analyse de la qualité de l'air en cours...
+                </div>
+            </div>
+
+            <!-- Tips environnementaux -->
+            <div class="tips-card fade-in">
+                <h4 class="tips-title">
+                    🌱 Le saviez-vous ?
+                </h4>
+                <div class="tips-text" id="tipsText">
+                    Chargement des conseils environnementaux...
+                </div>
+            </div>
+
+            <!-- Contrôles -->
+            <div class="card fade-in" style="text-align: center;">
+                <h3 style="margin-bottom: 1.5rem;">⚙️ Contrôles</h3>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button class="btn btn-primary" onclick="refreshAll()">
+                        🔄 Tout actualiser
+                    </button>
+                    <button class="btn btn-success" onclick="exportData()">
+                        💾 Exporter données
+                    </button>
+                    <button class="btn btn-warning" onclick="showSettings()">
+                        ⚙️ Paramètres
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        let autoRefresh = true;
-        let refreshInterval;
-        
-        // Fonction pour formater l'heure
-        function formatTime(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleString('fr-FR');
+        let chart = null;
+        let currentData = null;
+
+        // Variables pour les tips rotatifs
+        const environmentalTips = [
+            "Les plantes d'intérieur peuvent réduire le CO2 et améliorer la qualité de l'air naturellement.",
+            "Aérer 5-10 minutes matin et soir suffit pour renouveler l'air intérieur efficacement.",
+            "Un taux de CO2 inférieur à 1000 ppm favorise la concentration et le bien-être.",
+            "L'air extérieur contient généralement 400-420 ppm de CO2, c'est notre référence naturelle.",
+            "Les activités physiques augmentent notre production de CO2, pensez à aérer après le sport.",
+            "La cuisson et le chauffage peuvent augmenter significativement le taux de CO2 intérieur.",
+            "Un bon sommeil nécessite un air de qualité : visez moins de 1000 ppm dans la chambre.",
+            "Les purificateurs d'air éliminent les particules mais n'absorbent pas le CO2.",
+        ];
+
+        const adviceByLevel = {
+            excellent: {
+                title: "🌟 Air excellent !",
+                text: "Votre air est de qualité optimale. Maintenez cette qualité en continuant vos bonnes habitudes d'aération."
+            },
+            good: {
+                title: "✅ Bonne qualité d'air",
+                text: "L'air est de bonne qualité. Continuez à aérer régulièrement pour maintenir ce niveau."
+            },
+            medium: {
+                title: "⚠️ Qualité moyenne",
+                text: "Il serait bon d'aérer un peu. Ouvrez les fenêtres 5-10 minutes pour renouveler l'air."
+            },
+            bad: {
+                title: "🚨 Aérez maintenant !",
+                text: "Le taux de CO2 est élevé. Ouvrez immédiatement les fenêtres ou sortez prendre l'air frais."
+            },
+            danger: {
+                title: "🆘 DANGER - Action immédiate !",
+                text: "Niveau dangereux ! Évacuez la pièce et aérez complètement. Vérifiez vos équipements."
+            }
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initWeatherAPI();
+            loadData();
+            initChart();
+            rotateTips();
+            
+            // Auto-refresh toutes les 30 secondes
+            setInterval(loadData, 30000);
+            // Rotation des tips toutes les 10 secondes
+            setInterval(rotateTips, 10000);
+        });
+
+        async function loadData() {
+            try {
+                // Charger données principales
+                const [latestResponse, statsResponse] = await Promise.all([
+                    fetch('/api/data/latest'),
+                    fetch('/api/stats')
+                ]);
+
+                const latestData = await latestResponse.json();
+                const statsData = await statsResponse.json();
+
+                currentData = { latest: latestData, stats: statsData };
+
+                updateMainDisplay(latestData, statsData);
+                updateStats(statsData);
+                updateAdvice(latestData);
+
+            } catch (error) {
+                console.error('Erreur chargement données:', error);
+                showError('Erreur de connexion au serveur');
+            }
         }
-        
-        // Fonction pour déterminer la classe CSS selon le CO2
-        function getAirQualityClass(co2) {
+
+        function updateMainDisplay(latestData, statsData) {
+            const device = latestData.devices && latestData.devices[0];
+            
+            if (device) {
+                document.getElementById('currentCo2').textContent = device.co2_ppm;
+                document.getElementById('lastUpdate').textContent = 
+                    new Date(device.timestamp).toLocaleString('fr-FR');
+                
+                // Badge qualité air
+                const badge = document.getElementById('airQualityBadge');
+                const quality = getAirQuality(device.co2_ppm);
+                badge.className = `air-quality-badge ${quality}`;
+                badge.innerHTML = `<span>${getQualityText(quality)}</span>`;
+                
+                // Couleur du niveau CO2
+                const co2Element = document.getElementById('currentCo2');
+                co2Element.style.background = getQualityGradient(quality);
+                co2Element.style.webkitBackgroundClip = 'text';
+                co2Element.style.webkitTextFillColor = 'transparent';
+                co2Element.style.backgroundClip = 'text';
+            } else {
+                document.getElementById('currentCo2').textContent = '-';
+                document.getElementById('lastUpdate').textContent = 'Aucune donnée';
+            }
+        }
+
+        function updateStats(statsData) {
+            document.getElementById('totalDevices').textContent = statsData.total_devices || 0;
+            document.getElementById('avgCo2').textContent = statsData.avg_co2 || '-';
+            document.getElementById('totalMeasurements').textContent = statsData.total_measurements || 0;
+            
+            // Score santé basé sur la qualité moyenne
+            const healthScore = calculateHealthScore(statsData.avg_co2);
+            document.getElementById('healthScore').textContent = healthScore + '%';
+
+            // Stats détaillées
+            document.getElementById('excellentCount').textContent = statsData.excellent_count || 0;
+            document.getElementById('goodCount').textContent = statsData.good_count || 0;
+            document.getElementById('mediumCount').textContent = statsData.medium_count || 0;
+            document.getElementById('badCount').textContent = statsData.bad_count || 0;
+            document.getElementById('dangerCount').textContent = statsData.danger_count || 0;
+            document.getElementById('minCo2').textContent = statsData.min_co2 || '-';
+            document.getElementById('maxCo2').textContent = statsData.max_co2 || '-';
+        }
+
+        function updateAdvice(latestData) {
+            const device = latestData.devices && latestData.devices[0];
+            const adviceElement = document.getElementById('adviceText');
+            
+            if (device) {
+                const quality = getAirQuality(device.co2_ppm);
+                const advice = adviceByLevel[quality];
+                adviceElement.innerHTML = `<strong>${advice.title}</strong><br>${advice.text}`;
+            } else {
+                adviceElement.textContent = 'En attente de données des capteurs...';
+            }
+        }
+
+        function getAirQuality(co2) {
             if (co2 < 400) return 'excellent';
             if (co2 < 600) return 'good';
             if (co2 < 1000) return 'medium';
             if (co2 < 1500) return 'bad';
             return 'danger';
         }
-        
-        // Fonction pour le texte de qualité
-        function getAirQualityText(co2) {
-            if (co2 < 400) return 'EXCELLENT 😊';
-            if (co2 < 600) return 'BON 🙂';
-            if (co2 < 1000) return 'MOYEN 😐';
-            if (co2 < 1500) return 'MAUVAIS 😟';
-            return 'DANGER 🚨';
+
+        function getQualityText(quality) {
+            const texts = {
+                excellent: '🌟 Excellent',
+                good: '✅ Bon',
+                medium: '⚠️ Moyen',
+                bad: '🚨 Mauvais',
+                danger: '🆘 Danger'
+            };
+            return texts[quality] || 'Inconnu';
         }
-        
-        // Charger les statistiques
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const stats = await response.json();
-                
-                document.getElementById('total-devices').textContent = stats.total_devices;
-                document.getElementById('avg-co2').textContent = stats.avg_co2;
-                document.getElementById('total-measurements').textContent = stats.total_measurements;
-                
-                // Calculer score qualité globale
-                const total = stats.excellent_count + stats.good_count + stats.medium_count + stats.bad_count + stats.danger_count;
-                let score = 'N/A';
-                if (total > 0) {
-                    const weighted = (stats.excellent_count * 5 + stats.good_count * 4 + stats.medium_count * 3 + stats.bad_count * 2 + stats.danger_count * 1) / total;
-                    score = Math.round(weighted * 20) + '%';
+
+        function getQualityGradient(quality) {
+            const gradients = {
+                excellent: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                good: 'linear-gradient(135deg, #22c55e 0%, #4ade80 100%)',
+                medium: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+                bad: 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)',
+                danger: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)'
+            };
+            return gradients[quality] || 'var(--primary-gradient)';
+        }
+
+        function calculateHealthScore(avgCo2) {
+            if (!avgCo2) return 0;
+            if (avgCo2 < 400) return 100;
+            if (avgCo2 < 600) return 90;
+            if (avgCo2 < 800) return 75;
+            if (avgCo2 < 1000) return 60;
+            if (avgCo2 < 1200) return 40;
+            if (avgCo2 < 1500) return 20;
+            return 10;
+        }
+
+        function rotateTips() {
+            const tipsElement = document.getElementById('tipsText');
+            const randomTip = environmentalTips[Math.floor(Math.random() * environmentalTips.length)];
+            tipsElement.textContent = randomTip;
+        }
+
+        async function initChart() {
+            const ctx = document.getElementById('co2Chart').getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CO2 (ppm)',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' ppm';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverRadius: 8
+                        }
+                    }
                 }
-                document.getElementById('air-quality-score').textContent = score;
-                
-            } catch (error) {
-                console.error('Erreur stats:', error);
-            }
+            });
+
+            await refreshChart();
         }
-        
-        // Charger les données des devices
-        async function loadDevices() {
+
+        async function refreshChart() {
+            const hours = document.getElementById('timeRange').value;
+            
             try {
-                const response = await fetch('/api/data/latest');
+                const response = await fetch(`/api/data/history?hours=${hours}`);
                 const data = await response.json();
                 
-                const container = document.getElementById('devices-container');
-                
-                if (data.devices && data.devices.length > 0) {
-                    container.innerHTML = data.devices.map(device => {
-                        const qualityClass = getAirQualityClass(device.co2_ppm);
-                        const qualityText = getAirQualityText(device.co2_ppm);
-                        
-                        return `
-                            <div class="device-card">
-                                <div class="device-header">
-                                    <div class="device-name">📡 ${device.device_id}</div>
-                                    <div class="device-status ${qualityClass}">En ligne</div>
-                                </div>
-                                <div class="co2-display">
-                                    <div class="co2-value" style="color: var(--co2-color-${qualityClass})">${device.co2_ppm}</div>
-                                    <div class="co2-unit">ppm CO2</div>
-                                </div>
-                                <div class="air-quality ${qualityClass}">
-                                    ${qualityText}
-                                </div>
-                                <div class="timestamp">
-                                    📍 ${device.location} • 🕐 ${formatTime(device.timestamp)}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
+                if (data.data && data.data.length > 0) {
+                    const labels = data.data.map(point => 
+                        new Date(point.time).toLocaleTimeString('fr-FR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        })
+                    );
+                    const values = data.data.map(point => point.co2_ppm);
+                    
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = values;
+                    chart.update();
                 } else {
-                    container.innerHTML = `
-                        <div class="no-data">
-                            <h3>🔍 Aucun capteur détecté</h3>
-                            <p>Vérifiez que vos capteurs AirCarto envoient bien les données.</p>
-                            <p><strong>URL API:</strong> http://votre-ip:5000/api/co2</p>
-                        </div>
-                    `;
+                    chart.data.labels = [];
+                    chart.data.datasets[0].data = [];
+                    chart.update();
                 }
+            } catch (error) {
+                console.error('Erreur graphique:', error);
+            }
+        }
+
+        async function initWeatherAPI() {
+            try {
+                // Utiliser l'API OpenWeatherMap gratuite
+                // Vous devrez remplacer YOUR_API_KEY par une vraie clé
+                const API_KEY = 'demo'; // Remplacez par votre clé API
+                const city = 'Paris'; // Ville par défaut
+                
+                // Pour la démo, simuler des données météo
+                setTimeout(() => {
+                    document.getElementById('weatherTemp').textContent = '22°C';
+                    document.getElementById('weatherDesc').textContent = 'Ensoleillé';
+                    document.getElementById('weatherLocation').textContent = 'Paris, France';
+                }, 1000);
+                
+                /* Code pour vraie API météo :
+                const response = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=fr`
+                );
+                const data = await response.json();
+                
+                document.getElementById('weatherTemp').textContent = Math.round(data.main.temp) + '°C';
+                document.getElementById('weatherDesc').textContent = data.weather[0].description;
+                document.getElementById('weatherLocation').textContent = data.name + ', ' + data.sys.country;
+                */
                 
             } catch (error) {
-                console.error('Erreur devices:', error);
-                document.getElementById('devices-container').innerHTML = `
-                    <div class="no-data">
-                        <h3>❌ Erreur de connexion</h3>
-                        <p>Impossible de récupérer les données.</p>
-                    </div>
-                `;
+                console.error('Erreur météo:', error);
+                document.getElementById('weatherDesc').textContent = 'Indisponible';
             }
         }
-        
-        // Fonction de refresh complète
-        async function refreshData() {
-            document.getElementById('last-update').textContent = new Date().toLocaleString('fr-FR');
-            await Promise.all([loadStats(), loadDevices()]);
-        }
-        
-        // Toggle auto-refresh
-        function toggleAutoRefresh() {
-            autoRefresh = !autoRefresh;
-            document.getElementById('auto-refresh-status').textContent = autoRefresh ? 'Activé' : 'Désactivé';
+
+        function toggleDetails() {
+            const content = document.getElementById('detailsContent');
+            const button = event.target;
             
-            if (autoRefresh) {
-                startAutoRefresh();
+            if (content.style.display === 'none' || !content.style.display) {
+                content.style.display = 'block';
+                button.textContent = '📊 Masquer les détails';
             } else {
-                clearInterval(refreshInterval);
+                content.style.display = 'none';
+                button.textContent = '📊 Voir les données détaillées';
             }
         }
-        
-        // Démarrer auto-refresh
-        function startAutoRefresh() {
-            clearInterval(refreshInterval);
-            refreshInterval = setInterval(refreshData, 10000); // 10 secondes
+
+        function refreshAll() {
+            loadData();
+            refreshChart();
+            initWeatherAPI(); 
+            rotateTips();
+            
+            // Animation du bouton
+            const btn = event.target;
+            btn.textContent = '⏳ Actualisation...';
+            setTimeout(() => {
+                btn.textContent = '🔄 Tout actualiser';
+            }, 2000);
         }
-        
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            refreshData();
-            startAutoRefresh();
-        });
-        
-        // Actualiser quand la page redevient visible
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && autoRefresh) {
-                refreshData();
+
+        function exportData() {
+            if (currentData) {
+                const dataStr = JSON.stringify(currentData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `mypico-data-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
             }
-        });
+        }
+
+        function showSettings() {
+            alert('Paramètres à venir dans une prochaine version !');
+        }
+
+        function showError(message) {
+            // Créer une notification d'erreur temporaire
+            const error = document.createElement('div');
+            error.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #ef4444;
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            error.textContent = message;
+            document.body.appendChild(error);
+            
+            setTimeout(() => {
+                error.remove();
+            }, 5000);
+        }
+
+        // Gestion du changement de plage temporelle
+        document.getElementById('timeRange').addEventListener('change', refreshChart);
     </script>
 </body>
 </html> 

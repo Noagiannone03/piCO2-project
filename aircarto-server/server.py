@@ -12,6 +12,7 @@ import json
 import os
 from datetime import datetime, timedelta
 import logging
+import requests
 
 # Configuration
 INFLUXDB_URL = "http://localhost:8086"
@@ -248,6 +249,50 @@ def health_check():
     }
     return jsonify(status)
 
+@app.route('/api/weather')
+def get_weather():
+    """Récupère les données météo (pour démo)"""
+    try:
+        # Pour la démo, retourner des données simulées
+        # En production, utiliser une vraie API comme OpenWeatherMap
+        weather_data = {
+            "temperature": 22,
+            "description": "Ensoleillé",
+            "location": "Paris, France",
+            "humidity": 65,
+            "pressure": 1013
+        }
+        return jsonify(weather_data)
+        
+    except Exception as e:
+        logger.error(f"❌ Erreur météo: {e}")
+        return jsonify({
+            "temperature": "--",
+            "description": "Indisponible",
+            "location": "---",
+            "humidity": 0,
+            "pressure": 0
+        }), 500
+
+@app.route('/api/tips')
+def get_environmental_tips():
+    """Récupère des conseils environnementaux"""
+    tips = [
+        "Les plantes d'intérieur peuvent réduire le CO2 et améliorer la qualité de l'air naturellement.",
+        "Aérer 5-10 minutes matin et soir suffit pour renouveler l'air intérieur efficacement.",
+        "Un taux de CO2 inférieur à 1000 ppm favorise la concentration et le bien-être.",
+        "L'air extérieur contient généralement 400-420 ppm de CO2, c'est notre référence naturelle.",
+        "Les activités physiques augmentent notre production de CO2, pensez à aérer après le sport.",
+        "La cuisson et le chauffage peuvent augmenter significativement le taux de CO2 intérieur.",
+        "Un bon sommeil nécessite un air de qualité : visez moins de 1000 ppm dans la chambre.",
+        "Les purificateurs d'air éliminent les particules mais n'absorbent pas le CO2.",
+        "Une température entre 19-21°C avec un bon renouvellement d'air optimise votre confort.",
+        "Les bougies et encens produisent du CO2, pensez à aérer après utilisation."
+    ]
+    
+    import random
+    return jsonify({"tip": random.choice(tips)})
+
 # Initialisation automatique InfluxDB pour Gunicorn
 # S'exécute au chargement du module, même avec Gunicorn
 if not influx_client:
@@ -270,6 +315,8 @@ if __name__ == '__main__':
     print("📍 Interface web: http://localhost:5000")
     print("📡 API endpoint: http://localhost:5000/api/co2")
     print("📈 Graphiques: http://localhost:5000/charts")
+    print("🌤️  API météo: http://localhost:5000/api/weather")
+    print("💡 API conseils: http://localhost:5000/api/tips")
     print("🔄 Arrêt: Ctrl+C")
     
     app.run(host='0.0.0.0', port=5000, debug=False) 
