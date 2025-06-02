@@ -73,7 +73,8 @@ curl http://localhost:5000/api/data/latest
 ```
 
 ## 🔍 Vérification des logs
-
+ 
+ 
 ```bash
 # Voir les logs en temps réel
 sudo journalctl -u aircarto-server.service -f
