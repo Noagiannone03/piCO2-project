@@ -127,12 +127,12 @@ def get_latest_data():
         for table in result:
             for record in table.records:
                 try:
-                    # Accès sécurisé aux propriétés avec valeurs par défaut
+                    # Accès correct aux propriétés FluxRecord
                     device_data = {
-                        "device_id": record.get("device_id") or "aircarto_001",
-                        "location": record.get("location") or "salon", 
+                        "device_id": record.values.get("device_id") or "aircarto_001",
+                        "location": record.values.get("location") or "salon", 
                         "co2_ppm": int(record.get_value()) if record.get_value() is not None else 0,
-                        "air_quality": record.get("air_quality") or "unknown",
+                        "air_quality": record.values.get("air_quality") or "unknown",
                         "timestamp": record.get_time().isoformat() if record.get_time() else datetime.utcnow().isoformat()
                     }
                     devices.append(device_data)
@@ -225,7 +225,7 @@ def get_stats():
                 for record in table.records:
                     try:
                         value = record.get_value()
-                        device_id = record.get("device_id")
+                        device_id = record.values.get("device_id")
                         
                         if value is not None:
                             values.append(float(value))
