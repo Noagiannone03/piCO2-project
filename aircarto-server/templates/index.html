@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Pico - Dashboard CO2</title>
+    <title>My Pico - Surveillance CO2 Intelligente</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Couleurs Apple-like subtiles */
+            /* Design System Apple-inspired */
             --primary: #007AFF;
             --primary-light: #5AC8FA;
             --secondary: #5856D6;
@@ -19,33 +19,30 @@
             --danger: #FF3B30;
             --info: #5AC8FA;
             
-            /* Backgrounds subtils */
+            /* Backgrounds élégants */
             --bg-primary: #FAFAFA;
             --bg-card: #FFFFFF;
-            --bg-surface: #F7F7F7;
+            --bg-surface: #F8F9FA;
             --bg-hover: #F5F5F7;
             --bg-accent: rgba(0, 122, 255, 0.08);
             
-            /* Textes élégants */
+            /* Textes professionnels */
             --text-primary: #1D1D1F;
             --text-secondary: #86868B;
             --text-tertiary: #6E6E73;
-            --text-accent: #007AFF;
             
-            /* Bordures douces */
+            /* Bordures et ombres */
             --border-light: #E5E5E7;
             --border-medium: #D1D1D6;
+            --shadow-soft: 0 2px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-large: 0 16px 40px rgba(0, 0, 0, 0.15);
             
-            /* Ombres Apple-style */
-            --shadow-soft: 0 2px 16px rgba(0, 0, 0, 0.06);
-            --shadow-medium: 0 4px 24px rgba(0, 0, 0, 0.08);
-            --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.12);
-            
-            /* Rayons de courbure */
+            /* Rayons */
             --radius-small: 8px;
             --radius-medium: 12px;
-            --radius-large: 16px;
-            --radius-xl: 20px;
+            --radius-large: 20px;
+            --radius-xl: 28px;
         }
 
         * {
@@ -55,35 +52,105 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
-            font-weight: 400;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Header moderne et élégant */
-        .header {
+        /* Navigation moderne */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-surface);
+            border-radius: var(--radius-medium);
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Hero Section Professionnelle */
+        .hero {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            padding: 3rem 0 4rem 0;
+            padding: 8rem 0 6rem 0;
+            margin-top: 80px;
             position: relative;
             overflow: hidden;
         }
 
-        .header::before {
+        .hero::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><circle cx="200" cy="50" r="3"/><circle cx="400" cy="30" r="2"/><circle cx="600" cy="70" r="2.5"/><circle cx="800" cy="40" r="1.5"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" fill="rgba(255,255,255,0.1)"><circle cx="100" cy="50" r="3"/><circle cx="200" cy="120" r="2"/><circle cx="300" cy="80" r="2.5"/><circle cx="400" cy="200" r="1.5"/><circle cx="500" cy="60" r="3"/><circle cx="600" cy="150" r="2"/><circle cx="700" cy="100" r="2.5"/><circle cx="800" cy="180" r="1"/><circle cx="900" cy="40" r="2.5"/></svg>');
             background-size: cover;
+            opacity: 0.6;
         }
 
-        .header-content {
+        .hero-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
@@ -92,123 +159,214 @@
             text-align: center;
         }
 
-        .header h1 {
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
             color: white;
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            letter-spacing: -0.025em;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
         }
 
-        .header .subtitle {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 1.25rem;
+        .hero .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
             font-weight: 400;
-            max-width: 600px;
-            margin: 0 auto;
         }
 
-        /* Container avec grille responsive */
-        .main-container {
-            max-width: 1200px;
-            margin: -2rem auto 0;
-            padding: 0 2rem 2rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        .grid-layout {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .left-column {
+        .cta-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        .right-column {
-            display: flex;
-            flex-direction: column;
             gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        /* Cards avec style Apple */
-        .card {
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-medium);
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-large);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: -4rem auto 0;
+            padding: 0 2rem 4rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* CO2 Dashboard Principal */
+        .co2-dashboard {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-large);
+            border: 1px solid var(--border-light);
+            text-align: center;
+            position: relative;
+        }
+
+        .co2-main-value {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .co2-unit {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .air-quality-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 2rem 0;
+            background: linear-gradient(135deg, var(--success) 0%, #28A745 100%);
+            color: white;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .quality-explanation {
+            background: var(--bg-surface);
+            border-radius: var(--radius-medium);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .quality-explanation h4 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .quality-levels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .quality-level {
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: var(--radius-small);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .excellent { background: rgba(52, 199, 89, 0.1); color: var(--success); }
+        .good { background: rgba(90, 200, 250, 0.1); color: var(--info); }
+        .medium { background: rgba(255, 149, 0, 0.1); color: var(--warning); }
+        .bad { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
+        .danger { background: rgba(255, 59, 48, 0.2); color: var(--danger); }
+
+        /* Grille des informations */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Charts et statistiques */
+        .chart-section {
             background: var(--bg-card);
             border-radius: var(--radius-large);
             padding: 2rem;
             box-shadow: var(--shadow-soft);
             border: 1px solid var(--border-light);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
-        }
-
-        /* Boutons style Apple avec effet enfoncé */
-        .btn {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 2px solid var(--border-medium);
-            border-bottom-width: 4px;
-            border-right-width: 3px;
-            border-radius: var(--radius-medium);
-            padding: 0.875rem 1.75rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            display: inline-flex;
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
+            margin-bottom: 2rem;
         }
 
-        .btn:hover {
-            transform: translate(1px, 1px);
-            border-bottom-width: 3px;
-            border-right-width: 2px;
-            background: var(--bg-hover);
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
-        .btn:active {
-            transform: translate(2px, 2px);
-            border-bottom-width: 2px;
-            border-right-width: 2px;
+        .chart-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border-color: #0056CC;
+        .select-wrapper {
+            position: relative;
         }
 
-        .btn-primary:hover {
-            background: #0056CC;
+        .select-wrapper select {
+            appearance: none;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-small);
+            padding: 0.5rem 2rem 0.5rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
         }
 
-        .btn-success {
-            background: var(--success);
-            color: white;
-            border-color: #248A3D;
+        .chart-container {
+            position: relative;
+            height: 300px;
         }
 
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-            border-color: #CC7A00;
-        }
-
-        /* Stats overview améliorées */
-        .stats-overview {
+        /* Stats en temps réel */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
         }
 
@@ -219,353 +377,171 @@
             text-align: center;
             box-shadow: var(--shadow-soft);
             border: 1px solid var(--border-light);
-            position: relative;
             transition: all 0.3s ease;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-4px);
             box-shadow: var(--shadow-medium);
         }
 
         .stat-value {
             font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
             color: var(--primary);
+            margin-bottom: 0.5rem;
         }
 
         .stat-label {
             color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
-        /* CO2 principal élégant */
-        .co2-main {
-            text-align: center;
-            padding: 3rem 2rem;
+        .stat-description {
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            line-height: 1.4;
+        }
+
+        /* Sidebar informationnelle */
+        .info-sidebar {
             background: var(--bg-card);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-medium);
+            border-radius: var(--radius-large);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
             border: 1px solid var(--border-light);
-            position: relative;
+            height: fit-content;
         }
 
-        .co2-current {
-            font-size: 4rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
+        .info-section {
+            margin-bottom: 2rem;
         }
 
-        .co2-unit {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-bottom: 1.5rem;
+        .info-section:last-child {
+            margin-bottom: 0;
         }
 
-        .air-quality-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Couleurs air quality subtiles */
-        .excellent { 
-            background: linear-gradient(135deg, var(--success) 0%, #28A745 100%); 
-            color: white; 
-        }
-        .good { 
-            background: linear-gradient(135deg, #40E0D0 0%, var(--info) 100%); 
-            color: white; 
-        }
-        .medium { 
-            background: linear-gradient(135deg, var(--warning) 0%, #FFB84D 100%); 
-            color: white; 
-        }
-        .bad { 
-            background: linear-gradient(135deg, #FF6B47 0%, var(--danger) 100%); 
-            color: white; 
-        }
-        .danger { 
-            background: linear-gradient(135deg, var(--danger) 0%, #CC1F1A 100%); 
-            color: white; 
-        }
-
-        /* Cartes latérales */
-        .weather-card {
-            background: linear-gradient(135deg, var(--info) 0%, var(--primary-light) 100%);
-            color: white;
-            border-radius: var(--radius-large);
-            padding: 1.5rem;
-            text-align: center;
-            border: none;
-        }
-
-        .weather-temp {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .weather-desc {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        .advice-card {
-            background: var(--bg-accent);
-            border: 1px solid rgba(0, 122, 255, 0.2);
-            border-radius: var(--radius-large);
-            padding: 1.5rem;
-            position: relative;
-        }
-
-        .advice-title {
+        .info-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .advice-text {
             color: var(--text-primary);
-            line-height: 1.6;
-            font-size: 0.9rem;
-        }
-
-        .tips-card {
-            background: linear-gradient(135deg, #FFF8E7 0%, #FFF2CC 100%);
-            border: 1px solid #FFE066;
-            border-radius: var(--radius-large);
-            padding: 1.5rem;
-        }
-
-        .tips-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #B8860B;
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .tips-text {
-            color: #8B4513;
-            font-size: 0.85rem;
+        .tip-card {
+            background: var(--bg-accent);
+            border-radius: var(--radius-medium);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(0, 122, 255, 0.2);
+        }
+
+        .tip-text {
+            color: var(--text-primary);
+            font-size: 0.9rem;
             line-height: 1.5;
         }
 
-        /* Graphique moderne */
-        .chart-container {
-            background: var(--bg-card);
+        /* Action Section */
+        .action-section {
+            background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-card) 100%);
             border-radius: var(--radius-large);
-            padding: 2rem;
-            box-shadow: var(--shadow-soft);
+            padding: 3rem;
+            text-align: center;
+            margin-top: 3rem;
             border: 1px solid var(--border-light);
         }
 
-        .chart-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 2rem;
-            text-align: center;
+        .action-title {
+            font-size: 2rem;
+            font-weight: 700;
             color: var(--text-primary);
+            margin-bottom: 1rem;
         }
 
-        .chart-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .select-wrapper select {
-            appearance: none;
-            background: var(--bg-card);
-            border: 2px solid var(--border-medium);
-            border-radius: var(--radius-medium);
-            padding: 0.75rem 2.5rem 0.75rem 1rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            color: var(--text-primary);
-        }
-
-        /* Section détails corrigée */
-        .details-section {
-            background: var(--bg-card);
-            border-radius: var(--radius-large);
-            padding: 2rem;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-light);
-            margin-top: 2rem;
-        }
-
-        .details-toggle {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .details-content {
-            display: none;
-        }
-
-        .details-content.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-            overflow: hidden; /* Correction overflow */
-        }
-
-        .detail-stat {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            background: var(--bg-surface);
-            border-radius: var(--radius-medium);
-            border: 1px solid var(--border-light);
-            transition: all 0.2s ease;
-        }
-
-        .detail-stat:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-soft);
-        }
-
-        .detail-stat-value {
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .detail-stat-label {
+        .action-subtitle {
             color: var(--text-secondary);
-            font-size: 0.8rem;
-            font-weight: 500;
-            line-height: 1.3;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        /* Navigation vers détails */
-        .nav-section {
-            text-align: center;
-            margin: 3rem 0;
-        }
-
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 2rem;
-            background: var(--bg-card);
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            border-radius: var(--radius-medium);
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .nav-link:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-medium);
-        }
-
-        /* Responsive amélioré */
+        /* Responsive Design */
         @media (max-width: 1024px) {
-            .grid-layout {
+            .info-grid {
                 grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-            
-            .right-column {
-                order: -1;
             }
 
-            .header h1 {
-                font-size: 2.5rem;
+            .hero h1 {
+                font-size: 3rem;
             }
 
-            .stats-overview {
-                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-                gap: 1rem;
-            }
-
-            .details-grid {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-                gap: 0.75rem;
+            .co2-main-value {
+                font-size: 4rem;
             }
         }
 
         @media (max-width: 640px) {
-            .main-container {
+            .main-content {
                 padding: 0 1rem 2rem;
             }
 
-            .header h1 {
-                font-size: 2rem;
+            .hero h1 {
+                font-size: 2.5rem;
             }
 
-            .co2-current {
+            .hero .subtitle {
+                font-size: 1.2rem;
+            }
+
+            .co2-main-value {
                 font-size: 3rem;
             }
 
-            .chart-controls {
+            .cta-buttons {
                 flex-direction: column;
-                align-items: stretch;
+                align-items: center;
             }
 
-            .btn {
-                width: 100%;
-                justify-content: center;
+            .nav-links {
+                display: none;
             }
 
-            .details-grid {
+            .quality-levels {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
-        /* Animations fluides */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .fade-in {
-            animation: fadeIn 0.6s ease-out;
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out;
         }
 
-        /* Loading élégant */
+        /* Loading states */
         .loading {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-
-        .spinner {
             display: inline-block;
-            width: 1.5rem;
-            height: 1.5rem;
+            width: 1rem;
+            height: 1rem;
             border: 2px solid var(--border-light);
             border-top: 2px solid var(--primary);
             border-radius: 50%;
@@ -576,83 +552,103 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        /* Amélioration des détails */
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--text-primary);
-        }
-
-        .controls-section {
-            background: var(--bg-surface);
-            border-radius: var(--radius-large);
-            padding: 1.5rem;
-            border: 1px solid var(--border-light);
-        }
-
-        .controls-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            color: var(--text-primary);
-        }
-
-        .controls-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <h1>🌱 My Pico</h1>
-            <p class="subtitle">Surveillance CO2 intelligente et conseils environnementaux en temps réel</p>
-        </div>
-    </div>
-
-    <div class="main-container">
-        <!-- Stats principales -->
-        <div class="stats-overview fade-in">
-            <div class="stat-card">
-                <div class="stat-value" id="totalDevices">-</div>
-                <div class="stat-label">Capteurs actifs</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="avgCo2">-</div>
-                <div class="stat-label">PPM Moyen</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalMeasurements">-</div>
-                <div class="stat-label">Mesures 24h</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="healthScore">-</div>
-                <div class="stat-label">Score Santé</div>
-            </div>
-        </div>
-
-        <div class="grid-layout">
-            <div class="left-column">
-                <!-- Niveau CO2 principal -->
-                <div class="co2-main fade-in">
-                    <div class="co2-current" id="currentCo2">-</div>
-                    <div class="co2-unit">PPM CO2</div>
-                    <div class="air-quality-badge" id="airQualityBadge">
-                        <span>Analyse en cours...</span>
-                    </div>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
-                        Dernière mise à jour: <span id="lastUpdate">-</span>
-                    </p>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">🌱 My Pico</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link active">Accueil</a>
+                <a href="/charts" class="nav-link">Analyses</a>
+                <a href="#about" class="nav-link">À propos</a>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>En ligne</span>
                 </div>
+            </div>
+        </div>
+    </nav>
 
-                <!-- Graphique principal -->
-                <div class="chart-container fade-in">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <h1>Surveillance CO2 Intelligente</h1>
+            <p class="subtitle">
+                Surveillez la qualité de l'air en temps réel avec My Pico. 
+                Des données précises, des conseils personnalisés pour un environnement plus sain.
+            </p>
+            <div class="cta-buttons">
+                <a href="#dashboard" class="btn btn-primary">
+                    📊 Voir les données
+                </a>
+                <a href="/charts" class="btn btn-secondary">
+                    📈 Analyses détaillées
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard principal CO2 -->
+        <section id="dashboard" class="co2-dashboard fade-in-up">
+            <div class="co2-main-value">
+                <span id="currentCo2">-</span>
+                <span class="co2-unit">ppm</span>
+            </div>
+            
+            <div class="air-quality-badge" id="airQualityBadge">
+                <span>🌱</span>
+                <span>Analyse en cours...</span>
+            </div>
+            
+            <p style="color: var(--text-secondary); margin-bottom: 0;">
+                Dernière mise à jour: <span id="lastUpdate">-</span>
+            </p>
+
+            <div class="quality-explanation">
+                <h4>💡 Comprendre les niveaux de CO2</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Le CO2 est un indicateur clé de la qualité de l'air intérieur. Plus le taux est élevé, 
+                    plus l'air est vicié et peut affecter votre concentration et votre bien-être.
+                </p>
+                <div class="quality-levels">
+                    <div class="quality-level excellent">
+                        <div style="font-weight: 600;">Excellent</div>
+                        <div>&lt; 400 ppm</div>
+                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Air extérieur</div>
+                    </div>
+                    <div class="quality-level good">
+                        <div style="font-weight: 600;">Bon</div>
+                        <div>400-600 ppm</div>
+                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Optimal</div>
+                    </div>
+                    <div class="quality-level medium">
+                        <div style="font-weight: 600;">Moyen</div>
+                        <div>600-1000 ppm</div>
+                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Acceptable</div>
+                    </div>
+                    <div class="quality-level bad">
+                        <div style="font-weight: 600;">Mauvais</div>
+                        <div>1000-1500 ppm</div>
+                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Aérer</div>
+                    </div>
+                    <div class="quality-level danger">
+                        <div style="font-weight: 600;">Danger</div>
+                        <div>&gt; 1500 ppm</div>
+                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Urgent!</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Grille principale -->
+        <div class="info-grid">
+            <!-- Graphique principal -->
+            <section class="chart-section fade-in-up">
+                <div class="chart-header">
                     <h3 class="chart-title">📈 Évolution CO2</h3>
                     <div class="chart-controls">
                         <div class="select-wrapper">
@@ -664,162 +660,156 @@
                             </select>
                         </div>
                         <button class="btn btn-primary" onclick="refreshChart()">
-                            🔄 Actualiser
-                        </button>
-                    </div>
-                    <div style="position: relative; height: 300px;">
-                        <canvas id="co2Chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="right-column">
-                <!-- Météo -->
-                <div class="weather-card fade-in" id="weatherCard">
-                    <h4 style="margin-bottom: 1rem; font-weight: 600;">🌤️ Météo locale</h4>
-                    <div class="weather-temp" id="weatherTemp">-°C</div>
-                    <div class="weather-desc" id="weatherDesc">Chargement...</div>
-                    <p style="margin-top: 1rem; opacity: 0.8; font-size: 0.85rem;" id="weatherLocation">-</p>
-                </div>
-
-                <!-- Conseils -->
-                <div class="advice-card fade-in">
-                    <h4 class="advice-title">💡 Conseils personnalisés</h4>
-                    <div class="advice-text" id="adviceText">
-                        Analyse de la qualité de l'air en cours...
-                    </div>
-                </div>
-
-                <!-- Tips environnementaux -->
-                <div class="tips-card fade-in">
-                    <h5 class="tips-title">
-                        🌱 Le saviez-vous ?
-                    </h5>
-                    <div class="tips-text" id="tipsText">
-                        Chargement des conseils environnementaux...
-                    </div>
-                </div>
-
-                <!-- Contrôles -->
-                <div class="controls-section fade-in">
-                    <h4 class="controls-title">⚙️ Contrôles</h4>
-                    <div class="controls-grid">
-                        <button class="btn btn-primary" onclick="refreshAll()">
-                            🔄 Tout actualiser
-                        </button>
-                        <button class="btn btn-success" onclick="exportData()">
-                            💾 Exporter données
-                        </button>
-                        <button class="btn btn-warning" onclick="showSettings()">
-                            ⚙️ Paramètres
+                            🔄
                         </button>
                     </div>
                 </div>
-            </div>
+                <div class="chart-container">
+                    <canvas id="co2Chart"></canvas>
+                </div>
+            </section>
+
+            <!-- Sidebar informative -->
+            <aside class="info-sidebar fade-in-up">
+                <div class="info-section">
+                    <h4 class="info-title">
+                        💡 Conseil personnalisé
+                    </h4>
+                    <div class="tip-card">
+                        <div class="tip-text" id="personalizedAdvice">
+                            Analyse de votre environnement en cours...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4 class="info-title">
+                        🌿 Le saviez-vous ?
+                    </h4>
+                    <div class="tip-card">
+                        <div class="tip-text" id="environmentalTip">
+                            Chargement des conseils environnementaux...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h4 class="info-title">
+                        🌤️ Météo locale
+                    </h4>
+                    <div style="text-align: center; padding: 1rem;">
+                        <div style="font-size: 2rem; font-weight: 600; color: var(--primary);" id="weatherTemp">22°C</div>
+                        <div style="color: var(--text-secondary);" id="weatherDesc">Ensoleillé</div>
+                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem;" id="weatherLocation">Paris, France</div>
+                    </div>
+                </div>
+            </aside>
         </div>
 
-        <!-- Navigation vers page détaillée -->
-        <div class="nav-section fade-in">
-            <a href="/charts" class="nav-link">
-                📊 Voir les analyses détaillées
-                <span style="font-size: 1.2em;">→</span>
+        <!-- Statistiques en temps réel -->
+        <section class="fade-in-up">
+            <h3 style="text-align: center; margin-bottom: 2rem; font-size: 2rem; color: var(--text-primary);">
+                📊 Statistiques de votre environnement
+            </h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDevices">-</div>
+                    <div class="stat-label">Capteurs actifs</div>
+                    <div class="stat-description">Nombre de capteurs My Pico en fonctionnement</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgCo2">-</div>
+                    <div class="stat-label">Moyenne 24h</div>
+                    <div class="stat-description">Niveau moyen de CO2 sur les dernières 24 heures</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalMeasurements">-</div>
+                    <div class="stat-label">Mesures aujourd'hui</div>
+                    <div class="stat-description">Nombre total de relevés effectués</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="healthScore">-</div>
+                    <div class="stat-label">Score santé</div>
+                    <div class="stat-description">Évaluation globale de la qualité de l'air</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Action section -->
+        <section class="action-section fade-in-up">
+            <h3 class="action-title">Prêt pour une analyse approfondie ?</h3>
+            <p class="action-subtitle">
+                Découvrez des graphiques détaillés, des tendances historiques et des insights 
+                pour optimiser la qualité de l'air de votre environnement.
+            </p>
+            <a href="/charts" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.25rem 2.5rem;">
+                📈 Voir les analyses détaillées
             </a>
-        </div>
-
-        <!-- Section détails (corrigée) -->
-        <div class="details-section fade-in">
-            <div class="details-toggle">
-                <button class="btn btn-primary" onclick="toggleDetails()">
-                    📊 Aperçu des statistiques
-                </button>
-            </div>
-
-            <div class="details-content" id="detailsContent">
-                <h3 class="section-title">📊 Résumé des 24 dernières heures</h3>
-                <div class="details-grid">
-                    <div class="detail-stat excellent">
-                        <div class="detail-stat-value" id="excellentCount">-</div>
-                        <div class="detail-stat-label">Excellent<br>&lt;400 ppm</div>
-                    </div>
-                    <div class="detail-stat good">
-                        <div class="detail-stat-value" id="goodCount">-</div>
-                        <div class="detail-stat-label">Bon<br>400-600 ppm</div>
-                    </div>
-                    <div class="detail-stat medium">
-                        <div class="detail-stat-value" id="mediumCount">-</div>
-                        <div class="detail-stat-label">Moyen<br>600-1000 ppm</div>
-                    </div>
-                    <div class="detail-stat bad">
-                        <div class="detail-stat-value" id="badCount">-</div>
-                        <div class="detail-stat-label">Mauvais<br>1000-1500 ppm</div>
-                    </div>
-                    <div class="detail-stat danger">
-                        <div class="detail-stat-value" id="dangerCount">-</div>
-                        <div class="detail-stat-label">Danger<br>&gt;1500 ppm</div>
-                    </div>
-                    <div class="detail-stat">
-                        <div class="detail-stat-value" id="minCo2">-</div>
-                        <div class="detail-stat-label">Minimum<br>ppm</div>
-                    </div>
-                    <div class="detail-stat">
-                        <div class="detail-stat-value" id="maxCo2">-</div>
-                        <div class="detail-stat-label">Maximum<br>ppm</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <script>
         let chart = null;
         let currentData = null;
+        let isDemo = false; // Mode démo si pas de vraies données
 
-        // Variables pour les tips rotatifs
-        const environmentalTips = [
-            "Les plantes d'intérieur peuvent réduire le CO2 et améliorer la qualité de l'air naturellement.",
+        // Données de démonstration
+        const demoData = {
+            current: 650,
+            history: Array.from({length: 24}, (_, i) => ({
+                time: new Date(Date.now() - (23-i) * 60 * 60 * 1000).toISOString(),
+                co2_ppm: 400 + Math.sin(i * 0.3) * 200 + Math.random() * 100
+            })),
+            stats: {
+                total_devices: 1,
+                avg_co2: 625,
+                total_measurements: 1440,
+                max_co2: 890,
+                min_co2: 420
+            }
+        };
+
+        const tips = [
+            "Les plantes d'intérieur peuvent réduire le CO2 et améliorer naturellement la qualité de l'air.",
             "Aérer 5-10 minutes matin et soir suffit pour renouveler l'air intérieur efficacement.",
             "Un taux de CO2 inférieur à 1000 ppm favorise la concentration et le bien-être.",
             "L'air extérieur contient généralement 400-420 ppm de CO2, c'est notre référence naturelle.",
             "Les activités physiques augmentent notre production de CO2, pensez à aérer après le sport.",
-            "La cuisson et le chauffage peuvent augmenter significativement le taux de CO2 intérieur.",
-            "Un bon sommeil nécessite un air de qualité : visez moins de 1000 ppm dans la chambre.",
-            "Les purificateurs d'air éliminent les particules mais n'absorbent pas le CO2.",
+            "Un bon sommeil nécessite un air de qualité : visez moins de 1000 ppm dans la chambre."
         ];
 
         const adviceByLevel = {
-            excellent: {
-                title: "🌟 Air excellent !",
-                text: "Votre air est de qualité optimale. Maintenez cette qualité en continuant vos bonnes habitudes d'aération."
+            excellent: { 
+                title: "🌟 Air excellent !", 
+                text: "Votre air est de qualité optimale. Maintenez cette qualité en continuant vos bonnes habitudes d'aération." 
             },
-            good: {
-                title: "✅ Bonne qualité d'air",
-                text: "L'air est de bonne qualité. Continuez à aérer régulièrement pour maintenir ce niveau."
+            good: { 
+                title: "✅ Bonne qualité d'air", 
+                text: "L'air est de bonne qualité. Continuez à aérer régulièrement pour maintenir ce niveau." 
             },
-            medium: {
-                title: "⚠️ Qualité moyenne",
-                text: "Il serait bon d'aérer un peu. Ouvrez les fenêtres 5-10 minutes pour renouveler l'air."
+            medium: { 
+                title: "⚠️ Qualité moyenne", 
+                text: "Il serait bon d'aérer un peu. Ouvrez les fenêtres 5-10 minutes pour renouveler l'air." 
             },
-            bad: {
-                title: "🚨 Aérez maintenant !",
-                text: "Le taux de CO2 est élevé. Ouvrez immédiatement les fenêtres ou sortez prendre l'air frais."
+            bad: { 
+                title: "🚨 Aérez maintenant !", 
+                text: "Le taux de CO2 est élevé. Ouvrez immédiatement les fenêtres ou sortez prendre l'air frais." 
             },
-            danger: {
-                title: "🆘 DANGER - Action immédiate !",
-                text: "Niveau dangereux ! Évacuez la pièce et aérez complètement. Vérifiez vos équipements."
+            danger: { 
+                title: "🆘 DANGER - Action immédiate !", 
+                text: "Niveau dangereux ! Évacuez la pièce et aérez complètement. Vérifiez vos équipements." 
             }
         };
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            initWeatherAPI();
             loadData();
             initChart();
             rotateTips();
             
-            // Auto-refresh toutes les 30 secondes
+            // Auto-refresh
             setInterval(loadData, 30000);
-            // Rotation des tips toutes les 10 secondes
-            setInterval(rotateTips, 10000);
+            setInterval(rotateTips, 8000);
         });
 
         async function loadData() {
@@ -829,67 +819,110 @@
                     fetch('/api/stats')
                 ]);
 
-                const latestData = await latestResponse.json();
-                const statsData = await statsResponse.json();
-
-                currentData = { latest: latestData, stats: statsData };
-
-                updateMainDisplay(latestData, statsData);
-                updateStats(statsData);
-                updateAdvice(latestData);
-
+                if (latestResponse.ok && statsResponse.ok) {
+                    const latestData = await latestResponse.json();
+                    const statsData = await statsResponse.json();
+                    
+                    // Vérifier si on a des vraies données
+                    if (latestData.devices && latestData.devices.length > 0) {
+                        isDemo = false;
+                        currentData = { latest: latestData, stats: statsData };
+                        updateDisplay(latestData, statsData);
+                    } else {
+                        // Mode démo
+                        isDemo = true;
+                        currentData = demoData;
+                        updateDisplay({devices: [{
+                            co2_ppm: demoData.current,
+                            timestamp: new Date().toISOString(),
+                            air_quality: getAirQuality(demoData.current)
+                        }]}, demoData.stats);
+                    }
+                } else {
+                    // Fallback en mode démo
+                    isDemo = true;
+                    currentData = demoData;
+                    updateDisplay({devices: [{
+                        co2_ppm: demoData.current,
+                        timestamp: new Date().toISOString(),
+                        air_quality: getAirQuality(demoData.current)
+                    }]}, demoData.stats);
+                }
             } catch (error) {
-                console.error('Erreur chargement données:', error);
-                showError('Erreur de connexion au serveur');
+                console.error('Erreur:', error);
+                // Mode démo en cas d'erreur
+                isDemo = true;
+                currentData = demoData;
+                updateDisplay({devices: [{
+                    co2_ppm: demoData.current,
+                    timestamp: new Date().toISOString(),
+                    air_quality: getAirQuality(demoData.current)
+                }]}, demoData.stats);
             }
         }
 
-        function updateMainDisplay(latestData, statsData) {
+        function updateDisplay(latestData, statsData) {
             const device = latestData.devices && latestData.devices[0];
             
             if (device) {
-                document.getElementById('currentCo2').textContent = device.co2_ppm;
+                // Ajouter animation au changement de valeur
+                const co2Element = document.getElementById('currentCo2');
+                co2Element.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    co2Element.textContent = device.co2_ppm;
+                    co2Element.style.transform = 'scale(1)';
+                }, 150);
+                
                 document.getElementById('lastUpdate').textContent = 
                     new Date(device.timestamp).toLocaleString('fr-FR');
                 
                 const badge = document.getElementById('airQualityBadge');
                 const quality = getAirQuality(device.co2_ppm);
+                const qualityText = getQualityText(quality);
+                
                 badge.className = `air-quality-badge ${quality}`;
-                badge.innerHTML = `<span>${getQualityText(quality)}</span>`;
-            } else {
-                document.getElementById('currentCo2').textContent = '-';
-                document.getElementById('lastUpdate').textContent = 'Aucune donnée';
+                badge.innerHTML = `<span>${getQualityEmoji(quality)}</span><span>${qualityText}</span>`;
+                
+                // Mise à jour des conseils personnalisés
+                updatePersonalizedAdvice(quality);
             }
-        }
 
-        function updateStats(statsData) {
-            document.getElementById('totalDevices').textContent = statsData.total_devices || 0;
-            document.getElementById('avgCo2').textContent = statsData.avg_co2 || '-';
-            document.getElementById('totalMeasurements').textContent = statsData.total_measurements || 0;
+            // Mise à jour des stats
+            document.getElementById('totalDevices').textContent = statsData.total_devices || (isDemo ? 1 : 0);
+            document.getElementById('avgCo2').textContent = Math.round(statsData.avg_co2) || (isDemo ? demoData.stats.avg_co2 : '-');
+            document.getElementById('totalMeasurements').textContent = statsData.total_measurements || (isDemo ? demoData.stats.total_measurements : 0);
             
-            const healthScore = calculateHealthScore(statsData.avg_co2);
+            const healthScore = calculateHealthScore(statsData.avg_co2 || (isDemo ? demoData.stats.avg_co2 : 0));
             document.getElementById('healthScore').textContent = healthScore + '%';
 
-            document.getElementById('excellentCount').textContent = statsData.excellent_count || 0;
-            document.getElementById('goodCount').textContent = statsData.good_count || 0;
-            document.getElementById('mediumCount').textContent = statsData.medium_count || 0;
-            document.getElementById('badCount').textContent = statsData.bad_count || 0;
-            document.getElementById('dangerCount').textContent = statsData.danger_count || 0;
-            document.getElementById('minCo2').textContent = statsData.min_co2 || '-';
-            document.getElementById('maxCo2').textContent = statsData.max_co2 || '-';
+            if (isDemo) {
+                // Ajouter indicateur mode démo
+                const navbar = document.querySelector('.navbar');
+                if (!document.querySelector('.demo-indicator')) {
+                    const demoIndicator = document.createElement('div');
+                    demoIndicator.className = 'demo-indicator';
+                    demoIndicator.innerHTML = '🧪 Mode démonstration - Données simulées';
+                    demoIndicator.style.cssText = `
+                        position: fixed;
+                        top: 80px;
+                        right: 20px;
+                        background: var(--warning);
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: var(--radius-small);
+                        font-size: 0.8rem;
+                        z-index: 1000;
+                        box-shadow: var(--shadow-soft);
+                    `;
+                    document.body.appendChild(demoIndicator);
+                }
+            }
         }
 
-        function updateAdvice(latestData) {
-            const device = latestData.devices && latestData.devices[0];
-            const adviceElement = document.getElementById('adviceText');
-            
-            if (device) {
-                const quality = getAirQuality(device.co2_ppm);
-                const advice = adviceByLevel[quality];
-                adviceElement.innerHTML = `<strong>${advice.title}</strong><br>${advice.text}`;
-            } else {
-                adviceElement.textContent = 'En attente de données des capteurs...';
-            }
+        function updatePersonalizedAdvice(quality) {
+            const adviceElement = document.getElementById('personalizedAdvice');
+            const advice = adviceByLevel[quality];
+            adviceElement.innerHTML = `<strong>${advice.title}</strong><br>${advice.text}`;
         }
 
         function getAirQuality(co2) {
@@ -902,13 +935,24 @@
 
         function getQualityText(quality) {
             const texts = {
-                excellent: '🌟 Excellent',
-                good: '✅ Bon',
-                medium: '⚠️ Moyen',
-                bad: '🚨 Mauvais',
-                danger: '🆘 Danger'
+                excellent: 'Excellent',
+                good: 'Bon',
+                medium: 'Moyen', 
+                bad: 'Mauvais',
+                danger: 'Danger'
             };
             return texts[quality] || 'Inconnu';
+        }
+
+        function getQualityEmoji(quality) {
+            const emojis = {
+                excellent: '🌟',
+                good: '✅',
+                medium: '⚠️',
+                bad: '🚨',
+                danger: '🆘'
+            };
+            return emojis[quality] || '❓';
         }
 
         function calculateHealthScore(avgCo2) {
@@ -923,9 +967,13 @@
         }
 
         function rotateTips() {
-            const tipsElement = document.getElementById('tipsText');
-            const randomTip = environmentalTips[Math.floor(Math.random() * environmentalTips.length)];
-            tipsElement.textContent = randomTip;
+            const tipElement = document.getElementById('environmentalTip');
+            const randomTip = tips[Math.floor(Math.random() * tips.length)];
+            tipElement.style.opacity = '0.5';
+            setTimeout(() => {
+                tipElement.textContent = randomTip;
+                tipElement.style.opacity = '1';
+            }, 200);
         }
 
         async function initChart() {
@@ -940,13 +988,14 @@
                         data: [],
                         borderColor: '#007AFF',
                         backgroundColor: 'rgba(0, 122, 255, 0.1)',
-                        borderWidth: 2,
+                        borderWidth: 3,
                         fill: true,
                         tension: 0.4,
                         pointBackgroundColor: '#007AFF',
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
-                        pointRadius: 3
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
@@ -958,7 +1007,10 @@
                     scales: {
                         y: {
                             beginAtZero: false,
-                            grid: { color: '#E5E5E7' },
+                            grid: { 
+                                color: '#E5E5E7',
+                                drawBorder: false
+                            },
                             ticks: {
                                 color: '#86868B',
                                 callback: function(value) {
@@ -967,9 +1019,16 @@
                             }
                         },
                         x: {
-                            grid: { color: '#E5E5E7' },
+                            grid: { 
+                                color: '#E5E5E7',
+                                drawBorder: false
+                            },
                             ticks: { color: '#86868B' }
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
@@ -978,108 +1037,48 @@
         }
 
         async function refreshChart() {
-            const hours = document.getElementById('timeRange').value;
-            
             try {
-                const response = await fetch(`/api/data/history?hours=${hours}`);
-                const data = await response.json();
-                
-                if (data.data && data.data.length > 0) {
-                    const labels = data.data.map(point => 
+                if (isDemo) {
+                    // Utiliser les données de démo
+                    const labels = demoData.history.map(point => 
                         new Date(point.time).toLocaleTimeString('fr-FR', { 
                             hour: '2-digit', 
                             minute: '2-digit' 
                         })
                     );
-                    const values = data.data.map(point => point.co2_ppm);
+                    const values = demoData.history.map(point => Math.round(point.co2_ppm));
                     
                     chart.data.labels = labels;
                     chart.data.datasets[0].data = values;
                     chart.update();
+                } else {
+                    const hours = document.getElementById('timeRange').value;
+                    const response = await fetch(`/api/data/history?hours=${hours}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.data && data.data.length > 0) {
+                            const labels = data.data.map(point => 
+                                new Date(point.time).toLocaleTimeString('fr-FR', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })
+                            );
+                            const values = data.data.map(point => point.co2_ppm);
+                            
+                            chart.data.labels = labels;
+                            chart.data.datasets[0].data = values;
+                            chart.update();
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Erreur graphique:', error);
             }
         }
 
-        async function initWeatherAPI() {
-            try {
-                setTimeout(() => {
-                    document.getElementById('weatherTemp').textContent = '22°C';
-                    document.getElementById('weatherDesc').textContent = 'Ensoleillé';
-                    document.getElementById('weatherLocation').textContent = 'Paris, France';
-                }, 1000);
-            } catch (error) {
-                console.error('Erreur météo:', error);
-                document.getElementById('weatherDesc').textContent = 'Indisponible';
-            }
-        }
-
-        function toggleDetails() {
-            const content = document.getElementById('detailsContent');
-            const button = event.target;
-            
-            content.classList.toggle('show');
-            
-            if (content.classList.contains('show')) {
-                button.textContent = '📊 Masquer les statistiques';
-            } else {
-                button.textContent = '📊 Aperçu des statistiques';
-            }
-        }
-
-        function refreshAll() {
-            loadData();
-            refreshChart();
-            initWeatherAPI(); 
-            rotateTips();
-            
-            const btn = event.target;
-            btn.textContent = '⏳ Actualisation...';
-            setTimeout(() => {
-                btn.textContent = '🔄 Tout actualiser';
-            }, 2000);
-        }
-
-        function exportData() {
-            if (currentData) {
-                const dataStr = JSON.stringify(currentData, null, 2);
-                const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                const url = URL.createObjectURL(dataBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `mypico-data-${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-                URL.revokeObjectURL(url);
-            }
-        }
-
-        function showSettings() {
-            alert('Paramètres à venir dans une prochaine version !');
-        }
-
-        function showError(message) {
-            const error = document.createElement('div');
-            error.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: var(--danger);
-                color: white;
-                padding: 1rem 2rem;
-                border-radius: var(--radius-medium);
-                box-shadow: var(--shadow-large);
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-            `;
-            error.textContent = message;
-            document.body.appendChild(error);
-            
-            setTimeout(() => {
-                error.remove();
-            }, 5000);
-        }
-
+        // Event listeners
         document.getElementById('timeRange').addEventListener('change', refreshChart);
     </script>
 </body>
