@@ -28,16 +28,17 @@ import json
 import urequests
 import struct
 import os
+from aircarto_mascot import AirCartoMascot, draw_main_display_with_mascot
 
-print("🌱 === AirCarto v2.0 - WiFi Ready === 🌱")
+print("🌱 === My Pico v2.0 - WiFi Ready === 🌱")
 
 # =====================================================
 # CONFIGURATION
 # =====================================================
 WIFI_CONFIG_FILE = "wifi_config.json"
 SERVER_URL = "http://192.168.1.42:5000/api/co2"  # 🔧 IP du Raspberry Pi!
-AP_SSID = "AirCarto-Setup"
-AP_PASSWORD = "aircarto123"
+AP_SSID = "My-Pico"
+AP_PASSWORD = "mypico123"
 MEASUREMENT_INTERVAL = 30  # secondes
 RETRY_INTERVAL = 5  # secondes entre tentatives de connexion
 
@@ -98,7 +99,10 @@ def connect_wifi(ssid=None, password=None):
     wlan.active(True)
     
     print(f"🔌 Connexion à {config['ssid']}...")
-    display_status("Connexion WiFi", config['ssid'])
+    if mascot:
+        mascot.draw_config_screen("wifi_connect", "Connexion WiFi", config['ssid'])
+    else:
+        display_status("Connexion WiFi", config['ssid'])
     
     wlan.connect(config['ssid'], config['password'])
     
@@ -109,17 +113,28 @@ def connect_wifi(ssid=None, password=None):
         timeout -= 1
         print(f"⏳ Tentative... {timeout}s")
         if timeout % 3 == 0:  # Mise à jour écran toutes les 3s
-            display_status("Connexion WiFi", f"{config['ssid']} ({timeout}s)")
+            if mascot:
+                mascot.draw_config_screen("wifi_connect", "Connexion WiFi", f"{config['ssid']} ({timeout}s)")
+            else:
+                display_status("Connexion WiFi", f"{config['ssid']} ({timeout}s)")
     
     if wlan.isconnected():
         ip = wlan.ifconfig()[0]
         print(f"✅ WiFi connecté! IP: {ip}")
-        display_status("WiFi connecté", ip)
+        if mascot:
+            mascot.draw_config_screen("wifi_success", "WiFi connecté!", ip)
+            time.sleep(2)  # Montrer la joie du chat
+        else:
+            display_status("WiFi connecté", ip)
         wifi_connected = True
         return True
     else:
         print("❌ Connexion WiFi échouée")
-        display_status("WiFi échoué", "Vérifiez config")
+        if mascot:
+            mascot.draw_config_screen("wifi_fail", "WiFi échoué", "Vérifiez config")
+            time.sleep(2)  # Montrer la tristesse du chat
+        else:
+            display_status("WiFi échoué", "Vérifiez config")
         wifi_connected = False
         return False
 
@@ -128,7 +143,12 @@ def start_access_point():
     global ap_mode
     
     print("📡 Démarrage mode configuration...")
-    display_status("Mode Config", "AirCarto-Setup")
+    if mascot:
+        # Afficher les instructions de connexion (plus longtemps)
+        mascot.draw_setup_guide("connect_ap")
+        time.sleep(8)  # Plus de temps pour lire
+    else:
+        display_status("Mode Config", "My Pico Setup")
     
     # Créer point d'accès
     ap = network.WLAN(network.AP_IF)
@@ -145,6 +165,49 @@ def start_access_point():
     ap_mode = True
     return ap
 
+def wait_for_connection_and_show_qr(ap, mascot):
+    """Attendre qu'un client se connecte, puis afficher le QR code"""
+    print("🔍 Attente de connexion client...")
+    
+    if mascot:
+        # Afficher "En attente de connexion"
+        start_time = time.time()
+        last_station_count = 0
+        
+        while time.time() - start_time < 60:  # Timeout 60s
+            mascot.draw_setup_guide("waiting_connection")
+            time.sleep(1)
+            
+            # Vérifier s'il y a des clients connectés (méthode plus fiable)
+            try:
+                stations = ap.status('stations')
+                current_count = len(stations) if stations else 0
+                
+                if current_count > last_station_count:
+                    print(f"✅ Client connecté! ({current_count} stations)")
+                    
+                    # Attendre un peu pour stabiliser la connexion
+                    time.sleep(2)
+                    
+                    # Maintenant afficher le QR code
+                    ip = ap.ifconfig()[0]
+                    mascot.draw_setup_guide("show_qr", ip)
+                    print(f"📱 QR code affiché pour http://{ip}")
+                    return True
+                
+                last_station_count = current_count
+                
+            except Exception as e:
+                print(f"⚠️ Erreur vérification stations: {e}")
+        
+        # Timeout atteint - afficher le QR quand même
+        print("⏰ Timeout - affichage QR code quand même")
+        ip = ap.ifconfig()[0]
+        mascot.draw_setup_guide("show_qr", ip)
+        return True
+    
+    return True
+
 def create_captive_portal():
     """Crée le serveur web pour la configuration"""
     
@@ -154,49 +217,75 @@ def create_captive_portal():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AirCarto - Configuration WiFi</title>
+        <title>My Pico - Configuration WiFi</title>
         <style>
-            body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f8ff; }
-            .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            h1 { color: #2c5282; text-align: center; margin-bottom: 30px; }
-            .logo { text-align: center; font-size: 48px; margin-bottom: 20px; }
-            input, select { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
-            button { width: 100%; padding: 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; }
-            button:hover { background: #45a049; }
-            .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
-            .step { margin: 10px 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 420px; margin: 20px auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+            .container { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+            h1 { color: #2d3748; text-align: center; margin-bottom: 30px; font-weight: 600; }
+            .logo { text-align: center; font-size: 54px; margin-bottom: 15px; }
+            .subtitle { text-align: center; color: #718096; margin-bottom: 30px; }
+            input, select { width: 100%; padding: 14px; margin: 12px 0; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all 0.3s; }
+            input:focus, select:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+            button { width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+            button:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3); }
+            .guide { background: #f7fafc; padding: 20px; border-radius: 12px; margin: 25px 0; border-left: 4px solid #667eea; }
+            .step { margin: 12px 0; color: #4a5568; display: flex; align-items: center; }
+            .step-number { background: #667eea; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; font-weight: bold; }
+            .success { background: #f0fff4; border-left-color: #48bb78; }
+            label { font-weight: 600; color: #2d3748; margin-bottom: 5px; display: block; }
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="logo">🌱</div>
-            <h1>AirCarto Setup</h1>
+            <div class="logo">🚀</div>
+            <h1>My Pico</h1>
+            <div class="subtitle">Configuration WiFi</div>
             
-            <div class="info">
-                <strong>📋 Instructions:</strong>
-                <div class="step">1. Sélectionnez votre réseau WiFi</div>
-                <div class="step">2. Entrez le mot de passe</div>
-                <div class="step">3. Cliquez sur "Configurer"</div>
-                <div class="step">4. AirCarto se connectera automatiquement</div>
+            <div class="guide">
+                <strong>🎯 Guide rapide:</strong>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>Sélectionnez votre réseau WiFi</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>Entrez le mot de passe</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>Cliquez sur "Configurer"</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>My Pico se connectera automatiquement!</div>
+                </div>
             </div>
             
             <form action="/configure" method="POST">
-                <label for="ssid"><strong>🔌 Réseau WiFi:</strong></label>
+                <label for="ssid">🔌 Réseau WiFi:</label>
                 <select name="ssid" id="ssid" required>
-                    <option value="">-- Sélectionnez un réseau --</option>
+                    <option value="">-- Choisissez votre réseau --</option>
                     %NETWORKS%
                 </select>
                 
-                <label for="password"><strong>🔑 Mot de passe:</strong></label>
-                <input type="password" name="password" id="password" placeholder="Mot de passe WiFi" required>
+                <label for="password">🔑 Mot de passe WiFi:</label>
+                <input type="password" name="password" id="password" placeholder="Entrez le mot de passe" required>
                 
-                <button type="submit">🚀 Configurer AirCarto</button>
+                <button type="submit">🚀 Configurer et connecter</button>
             </form>
         </div>
         
         <script>
-            // Auto-refresh networks every 10s
-            setTimeout(() => location.reload(), 10000);
+            // Auto-refresh networks every 15s
+            setTimeout(() => location.reload(), 15000);
+            
+            // Animation du bouton
+            document.querySelector('button').addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+            });
+            document.querySelector('button').addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
         </script>
     </body>
     </html>
@@ -261,7 +350,6 @@ def create_captive_portal():
     s.listen(5)
     
     print("🌐 Serveur web démarré sur http://192.168.4.1")
-    display_status("Web Config", "192.168.4.1")
     
     while ap_mode:
         conn = None  # Initialiser conn à None
@@ -460,7 +548,7 @@ def display_status(title, subtitle=""):
     """Affiche un statut sur l'écran"""
     if oled:
         oled.fill(0)
-        oled.text("AirCarto v2.0", 10, 0)
+        oled.text("My Pico v2.0", 10, 0)
         oled.hline(0, 10, 128, 1)
         oled.text(title, 10, 20)
         if subtitle:
@@ -475,7 +563,7 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, server_status):
     oled.fill(0)
     
     # En-tête avec statuts
-    oled.text("AirCarto", 35, 0)
+    oled.text("My Pico", 35, 0)
     
     # Statuts connexion
     wifi_icon = "📶" if wifi_connected else "❌"
@@ -521,16 +609,22 @@ def main():
         # Initialiser la mascotte
         print("🐱 Initialisation mascotte...")
         try:
-            from aircarto_mascot import AirCartoMascot, draw_main_display_with_mascot
             mascot = AirCartoMascot(oled)
             print("✅ Mascotte prête!")
             use_mascot = True
+            
+            # Animation de démarrage avec mascotte
+            print("🎬 Animation de démarrage...")
+            frame = 0
+            while mascot.draw_startup_animation(frame):
+                frame += 1
+                time.sleep(0.1)  # 10 FPS
+                
         except ImportError:
             print("⚠️ Mascotte non disponible, mode classique")
             use_mascot = False
-        
-        display_status("Demarrage...", "AirCarto v2.0")
-        time.sleep(2)
+            display_status("Demarrage...", "My Pico v2.0")
+            time.sleep(2)
         
         # Tentative de connexion WiFi
         print("🔌 Tentative connexion WiFi...")
@@ -540,7 +634,15 @@ def main():
             print("📡 Démarrage mode configuration...")
             ap_mode = True  # S'assurer que ap_mode est défini
             ap = start_access_point()
-            wifi_configured = create_captive_portal()
+            
+            # Attendre connexion et afficher QR quand nécessaire
+            connection_detected = wait_for_connection_and_show_qr(ap, mascot if use_mascot else None)
+            
+            if connection_detected:
+                wifi_configured = create_captive_portal()
+            else:
+                wifi_configured = False
+                
             ap_mode = False  # Réinitialiser après le captive portal
             
             if not wifi_configured:
@@ -558,11 +660,23 @@ def main():
             display_status("WiFi OK", "Demarrage systeme")
             time.sleep(2)
         
-        # Préchauffage capteur
+        # Préchauffage capteur avec animation
         print("🌡️ Préchauffage capteur...")
-        for i in range(6):
-            display_status("Prechauffage", f"{(6-i)*5}s restantes")
-            time.sleep(5)
+        if use_mascot and mascot:
+            # Animation de préchauffage avec chat qui dort
+            frame = 0
+            while mascot.draw_sleeping_animation(frame):
+                frame += 1
+                time.sleep(0.25)  # 4 FPS pour animation plus lente
+        else:
+            # Mode classique
+            for i in range(6):
+                display_status("Prechauffage", f"{(6-i)*5}s restantes")
+                time.sleep(5)
+        
+        # Animation de réveil
+        if use_mascot and mascot:
+            mascot.draw_waking_animation()
         
         print("✅ Système prêt!")
         
