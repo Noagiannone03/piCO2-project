@@ -468,11 +468,11 @@
             .hero h1 {
                 font-size: 2.5rem;
             }
-            
+
             .hero .subtitle {
                 font-size: 1.2rem;
             }
-            
+
             .city-title {
                 font-size: 2rem;
             }
@@ -495,6 +495,332 @@
             .btn {
                 padding: 0.5rem 1rem;
                 font-size: 0.9rem;
+            }
+        }
+
+        /* Responsive Design Pro */
+        @media (max-width: 1200px) {
+            .main-content {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .nav-container {
+                padding: 0 1.5rem;
+            }
+            
+            .hero h1 {
+                font-size: 3rem;
+            }
+            
+            .hero .subtitle {
+                font-size: 1.3rem;
+            }
+            
+            .data-section {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Navigation mobile optimisée */
+            .nav-container {
+                padding: 0 1rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            
+            .logo {
+                font-size: 1.3rem;
+            }
+            
+            .nav-actions {
+                flex-direction: row;
+                gap: 0.75rem;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.85rem;
+                flex: 1;
+                max-width: 160px;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            /* Hero mobile */
+            .hero {
+                padding: 6rem 0 4rem 0;
+                margin-top: 100px; /* Plus d'espace pour navbar mobile */
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+                line-height: 1.2;
+            }
+
+            .hero .subtitle {
+                font-size: 1.1rem;
+                padding: 0 1rem;
+            }
+            
+            .cta-section {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+            
+            .cta-section .btn {
+                width: 100%;
+                max-width: 280px;
+            }
+            
+            /* Main content mobile */
+            .main-content {
+                margin: -2rem auto 0;
+                padding: 0 1rem 2rem;
+            }
+            
+            /* City stats mobile */
+            .city-stats {
+                padding: 2rem 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .city-title {
+                font-size: 1.8rem;
+            }
+            
+            .city-subtitle {
+                font-size: 1rem;
+                margin-bottom: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem 1rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .stat-label {
+                font-size: 0.8rem;
+            }
+            
+            .stat-description {
+                font-size: 0.75rem;
+            }
+            
+            /* Data section mobile - CORRECTION DÉBORDEMENT */
+            .data-section {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .map-container, .chart-container {
+                padding: 1.5rem;
+                margin: 0;
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 100%;
+                overflow: hidden;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+                margin-bottom: 1rem;
+            }
+            
+            /* Map mobile - FIX DÉBORDEMENT */
+            #map {
+                height: 300px;
+                width: 100%;
+                max-width: 100%;
+                border-radius: var(--radius-medium);
+                overflow: hidden;
+                position: relative;
+                box-sizing: border-box;
+            }
+            
+            /* Chart mobile */
+            .chart-wrapper {
+                height: 300px;
+                width: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            /* Legend mobile */
+            .map-legend {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                margin-top: 1rem;
+            }
+            
+            .legend-item {
+                font-size: 0.75rem;
+            }
+            
+            /* Features mobile */
+            .features-section {
+                padding: 2.5rem 1.5rem;
+                margin-bottom: 2rem;
+            }
+            
+            .features-title {
+                font-size: 1.8rem;
+            }
+            
+            .features-subtitle {
+                font-size: 1rem;
+                margin-bottom: 2.5rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .feature-card {
+                padding: 1.5rem;
+            }
+            
+            .feature-icon {
+                font-size: 2.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .feature-title {
+                font-size: 1.3rem;
+            }
+            
+            /* CTA final mobile */
+            .final-cta {
+                padding: 2.5rem 1.5rem;
+                margin: 0;
+            }
+            
+            .cta-title {
+                font-size: 1.8rem;
+            }
+            
+            .cta-subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Très petits écrans */
+            .nav-container {
+                padding: 0 0.75rem;
+            }
+            
+            .hero {
+                margin-top: 120px; /* Plus d'espace pour navbar qui wrap */
+            }
+            
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .hero .subtitle {
+                font-size: 1rem;
+            }
+            
+            .main-content {
+                padding: 0 0.75rem 2rem;
+            }
+            
+            .city-stats {
+                padding: 1.5rem 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .map-container, .chart-container {
+                padding: 1rem;
+            }
+            
+            #map {
+                height: 250px;
+            }
+            
+            .chart-wrapper {
+                height: 250px;
+            }
+            
+            .features-section {
+                padding: 2rem 1rem;
+            }
+            
+            .final-cta {
+                padding: 2rem 1rem;
+            }
+        }
+
+        /* Améliorations touch et mobile UX */
+        @media (hover: none) and (pointer: coarse) {
+            /* Styles pour appareils tactiles */
+            .btn {
+                padding: 0.8rem 1.5rem;
+                font-size: 0.9rem;
+                touch-action: manipulation;
+            }
+            
+            .stat-card:hover {
+                transform: none;
+            }
+            
+            .btn-primary:hover {
+                transform: none;
+            }
+        }
+        
+        /* Container sécurisé pour éviter débordement */
+        .container-safe {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        
+        /* Map container sécurisé */
+        .map-safe {
+            width: 100%;
+            max-width: 100%;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-medium);
+        }
+        
+        @media (max-width: 768px) {
+            .map-safe {
+                height: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .map-safe {
+                height: 250px;
             }
         }
     </style>
@@ -543,8 +869,8 @@
                     </div>
                     <div class="stat-label">Capteurs Actifs</div>
                     <div class="stat-description">Stations de mesure connectées</div>
-                </div>
-                
+            </div>
+            
                 <div class="stat-card">
                     <div class="stat-value" style="color: var(--warning);" id="avg-co2">
                         <span class="loading">
@@ -554,7 +880,7 @@
                     </div>
                     <div class="stat-label">CO2 Moyen</div>
                     <div class="stat-description">Moyenne ville (dernières 24h)</div>
-                </div>
+                    </div>
                 
                 <div class="stat-card">
                     <div class="stat-value" style="color: var(--success);" id="good-quality">
@@ -565,7 +891,7 @@
                     </div>
                     <div class="stat-label">Zones Saines</div>
                     <div class="stat-description">Qualité excellente/bonne</div>
-                </div>
+                    </div>
                 
                 <div class="stat-card">
                     <div class="stat-value" style="color: var(--info);" id="total-measurements">
@@ -573,34 +899,34 @@
                             <span class="spinner"></span>
                             ---
                         </span>
-                    </div>
+                        </div>
                     <div class="stat-label">Mesures</div>
                     <div class="stat-description">Total dernières 24h</div>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
         <!-- Section Carte et Graphique -->
-        <section class="data-section" id="data">
+        <section class="data-section container-safe" id="data">
             <div class="map-container">
                 <h3 class="section-title">
                     🗺️ Carte Interactive
                 </h3>
-                <div id="map">
+                <div id="map" class="map-safe">
                     <div style="text-align: center;">
                         <div class="spinner" style="margin: 0 auto 1rem;"></div>
                         <div>Chargement de la carte de Marseille...</div>
+                        </div>
                     </div>
-                </div>
                 <div class="map-legend">
                     <div class="legend-item">
                         <div class="legend-color excellent"></div>
                         <span>Excellent (&lt;400)</span>
-                    </div>
+                </div>
                     <div class="legend-item">
                         <div class="legend-color good"></div>
                         <span>Bon (400-600)</span>
-                    </div>
+                        </div>
                     <div class="legend-item">
                         <div class="legend-color medium"></div>
                         <span>Moyen (600-1000)</span>
@@ -608,22 +934,22 @@
                     <div class="legend-item">
                         <div class="legend-color bad"></div>
                         <span>Mauvais (1000-1500)</span>
-                    </div>
+                </div>
                     <div class="legend-item">
                         <div class="legend-color danger"></div>
                         <span>Dangereux (&gt;1500)</span>
                     </div>
                 </div>
-            </div>
-            
+        </div>
+
             <div class="chart-container">
                 <h3 class="section-title">
                     📈 Évolution 24h
-                </h3>
+            </h3>
                 <div class="chart-wrapper">
                     <canvas id="cityChart"></canvas>
                 </div>
-            </div>
+                </div>
         </section>
 
         <!-- Section Features -->
@@ -840,12 +1166,12 @@
                             beginAtZero: false,
                             min: 300,
                             max: 800,
-                            grid: {
+                            grid: { 
                                 color: 'rgba(0, 0, 0, 0.1)'
                             }
                         },
                         x: {
-                            grid: {
+                            grid: { 
                                 color: 'rgba(0, 0, 0, 0.1)'
                             }
                         }

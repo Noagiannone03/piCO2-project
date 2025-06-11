@@ -392,48 +392,233 @@
             margin-top: 1.5rem;
         }
 
-        /* Responsive */
+        /* Responsive Design Pro */
+        @media (max-width: 1200px) {
+            .main-container {
+                max-width: 100%;
+                padding: 0 1.5rem 2rem;
+            }
+        }
+
         @media (max-width: 1024px) {
             .charts-grid {
                 grid-template-columns: 1fr;
+                gap: 1.5rem;
             }
 
             .header-content {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 1.5rem;
                 text-align: center;
             }
 
             .header-nav {
                 justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.75rem;
             }
 
             .controls-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .main-container {
-                padding: 0 1rem 2rem;
-            }
-
-            .header-left h1 {
-                font-size: 2rem;
-            }
-
-            .stats-row {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 1rem;
             }
+            
+            .stats-row {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+        }
 
+        @media (max-width: 768px) {
+            /* Header mobile */
+            .header {
+                padding: 1.5rem 0 2rem 0;
+            }
+            
+            .header-content {
+                padding: 0 1rem;
+                gap: 1rem;
+            }
+            
+            .header-left h1 {
+                font-size: 2rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .header-left .subtitle {
+                font-size: 1rem;
+            }
+            
+            .nav-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+            }
+            
+            /* Main container mobile */
+            .main-container {
+                margin: -1rem auto 0;
+                padding: 0 1rem 2rem;
+            }
+            
+            /* Controls mobile */
+            .controls-section {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .controls-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .control-select, .control-input {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+                width: 100%;
+            }
+            
+            /* Stats mobile */
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .stat-card {
+                padding: 1.25rem 1rem;
+                text-align: center;
+            }
+            
+            .stat-value {
+                font-size: 1.75rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .stat-label {
+                font-size: 0.8rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .stat-trend {
+                font-size: 0.75rem;
+            }
+            
+            /* Charts mobile */
             .chart-card {
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            
+            .chart-title {
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .chart-large .chart-container {
+                height: 300px;
+            }
+            
+            /* Export section mobile */
+            .export-section {
                 padding: 1.5rem;
             }
-
+            
             .export-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
+        }
+
+        @media (max-width: 480px) {
+            /* Très petits écrans */
+            .header {
+                padding: 1rem 0 1.5rem 0;
+            }
+            
+            .header-content {
+                padding: 0 0.75rem;
+            }
+            
+            .header-left h1 {
+                font-size: 1.6rem;
+            }
+            
+            .header-left .subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .nav-btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+                min-width: 100px;
+            }
+            
+            .main-container {
+                padding: 0 0.75rem 1.5rem;
+            }
+            
+            .controls-section, .chart-card {
+                padding: 1rem;
+            }
+            
+            .stats-row {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .stat-card {
+                padding: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .chart-container {
+                height: 220px;
+            }
+            
+            .chart-large .chart-container {
+                height: 260px;
+            }
+        }
+
+        /* Améliorations touch et UX mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .nav-btn, .btn, .control-select {
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .nav-btn:hover, .btn:hover {
+                transform: none;
+            }
+            
+            .stat-card:hover {
+                transform: none;
+            }
+        }
+        
+        /* Sécurité container */
+        .container-safe {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         /* Animations */
