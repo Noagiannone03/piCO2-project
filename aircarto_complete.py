@@ -135,33 +135,58 @@ def get_device_info():
 # FIREBASE INTEGRATION
 # =====================================================
 
-def firebase_request(method, path, data=None):
-    """Effectue une requête vers Firebase"""
+def firebase_request(method, path, data=None, max_retries=3):
+    """Effectue une requête vers Firebase avec retry automatique"""
     url = f"{FIREBASE_BASE_URL}/{path}"
     headers = {"Content-Type": "application/json"}
     
-    try:
-        if method == "POST":
-            response = urequests.post(url, json=data, headers=headers)
-        elif method == "GET":
-            response = urequests.get(url, headers=headers)
-        elif method == "PATCH":
-            response = urequests.patch(url, json=data, headers=headers)
-        else:
-            return None
-        
-        if response.status_code in [200, 201]:
-            result = response.json()
-            response.close()
-            return result
-        else:
-            print(f"❌ Firebase error {response.status_code}: {response.text}")
-            response.close()
-            return None
+    for attempt in range(max_retries):
+        try:
+            # Petit délai entre les tentatives
+            if attempt > 0:
+                print(f"🔄 Tentative {attempt + 1}/{max_retries}")
+                time.sleep(min(2 ** attempt, 10))  # Backoff exponentiel
             
-    except Exception as e:
-        print(f"❌ Firebase request error: {e}")
-        return None
+            if method == "POST":
+                response = urequests.post(url, json=data, headers=headers)
+            elif method == "GET":
+                response = urequests.get(url, headers=headers)
+            elif method == "PATCH":
+                response = urequests.patch(url, json=data, headers=headers)
+            else:
+                return None
+            
+            if response.status_code in [200, 201]:
+                result = response.json()
+                response.close()
+                return result
+            else:
+                print(f"❌ Firebase HTTP {response.status_code}: {response.text}")
+                response.close()
+                if attempt == max_retries - 1:
+                    return None
+                continue
+                
+        except OSError as e:
+            # Erreurs réseau spécifiques
+            error_msg = str(e)
+            if "104" in error_msg or "ECONNRESET" in error_msg:
+                print(f"🌐 Connexion réinitialisée (tentative {attempt + 1})")
+            elif "29312" in error_msg or "SSL_CONN_EOF" in error_msg:
+                print(f"🔒 Erreur SSL (tentative {attempt + 1})")
+            else:
+                print(f"❌ Erreur réseau: {e} (tentative {attempt + 1})")
+            
+            if attempt == max_retries - 1:
+                print(f"❌ Échec après {max_retries} tentatives")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Erreur Firebase: {e} (tentative {attempt + 1})")
+            if attempt == max_retries - 1:
+                return None
+    
+    return None
 
 def get_geolocation():
     """Récupère la géolocalisation via IP"""
@@ -305,6 +330,12 @@ def register_device_firebase():
 def send_measurement_firebase(co2_ppm, status):
     """Envoie une mesure vers Firebase"""
     if not device_registered:
+        return False
+    
+    # Vérifier la connectivité WiFi
+    wlan = network.WLAN(network.STA_IF)
+    if not wlan.isconnected():
+        print("❌ WiFi déconnecté, impossible d'envoyer")
         return False
     
     device_info = get_device_info()
@@ -476,6 +507,7 @@ def start_configuration_mode():
 
 def create_config_portal(ap_ip):
     """Crée le portail de configuration WiFi"""
+    global ap_mode
     
     config_page = f"""
     <!DOCTYPE html>
@@ -663,7 +695,12 @@ def create_config_portal(ap_ip):
                     # Réponse de succès
                     response = f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{success_page}"
                     conn.send(response.encode())
-                    conn.close()
+                    
+                    # Fermer connexion proprement
+                    try:
+                        conn.close()
+                    except:
+                        pass
                     conn = None
                     
                     # Fermer serveur et AP
@@ -697,17 +734,21 @@ def create_config_portal(ap_ip):
                 response = f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{page}"
                 conn.send(response.encode())
             
-            if conn:
-                conn.close()
-                conn = None
+            # Fermer connexion dans tous les cas
+            try:
+                if conn:
+                    conn.close()
+            except:
+                pass
             
         except Exception as e:
             print(f"❌ Erreur serveur: {e}")
-            if conn:
-                try:
+            # Fermer connexion en cas d'erreur
+            try:
+                if conn:
                     conn.close()
-                except:
-                    pass
+            except:
+                pass
         
         if not ap_mode:
             break
@@ -920,8 +961,18 @@ def main():
                 if use_mascot and mascot:
                     mascot.animate_reaction("wifi_error")
                 
-                # Tenter reconnexion
-                if not connect_wifi():
+                # Tenter reconnexion automatique
+                print("🔄 Tentative de reconnexion WiFi...")
+                for retry in range(3):
+                    if connect_wifi():
+                        print("✅ Reconnexion WiFi réussie!")
+                        break
+                    else:
+                        print(f"❌ Échec reconnexion {retry + 1}/3")
+                        time.sleep(5)
+                
+                if not wlan.isconnected():
+                    print("❌ Impossible de se reconnecter, attente...")
                     time.sleep(RETRY_INTERVAL)
                     continue
             
@@ -955,6 +1006,9 @@ def main():
             
             # Attendre prochaine mesure
             time.sleep(MEASUREMENT_INTERVAL)
+            
+            # Petit délai supplémentaire pour éviter la surcharge réseau
+            time.sleep(1)
             
     except ImportError as e:
         print(f"❌ Librairie manquante: {e}")

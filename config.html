@@ -477,7 +477,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, onSnapshot, updateDoc, arrayUnion, collection, query, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Configuration Firebase
         const firebaseConfig = {
@@ -499,7 +499,6 @@
         let currentUser = null;
         let deviceId = null;
         let searchStartTime = null;
-        let deviceListener = null;
         let timerInterval = null;
         let progressInterval = null;
 
@@ -547,60 +546,159 @@
             startTimer();
             startProgressBar();
             
-            // Écouter les changements du document device
-            const deviceRef = doc(db, 'devices', deviceId);
-            
-            deviceListener = onSnapshot(deviceRef, (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    const deviceData = docSnapshot.data();
-                    console.log('📊 Device trouvé:', deviceData);
-                    
-                    updateStep(2, 'completed', '✅', 'Capteur enregistré avec succès');
-                    
-                    if (deviceData.info?.isRegistered) {
-                        // Device enregistré, vérifier s'il y a des mesures
-                        checkForMeasurements();
-                    }
-                } else {
-                    console.log('⏳ Device pas encore enregistré...');
-                }
-            }, (error) => {
-                console.error('❌ Erreur écoute device:', error);
-                showError('Erreur lors de la surveillance du device');
+            // Attendre 5 secondes avant de commencer la recherche
+            console.log('⏳ Attente de 5 secondes pour laisser le Pico s\'enregistrer...');
+            updateUI({
+                icon: '⏳',
+                title: 'Préparation de la recherche',
+                description: 'Attente que votre Pico termine son enregistrement...',
+                progress: 20
             });
+            
+            setTimeout(() => {
+                console.log('🔍 Début de la recherche du device...');
+                updateUI({
+                    icon: '🔍',
+                    title: 'Recherche de votre Pico',
+                    description: 'Vérification dans la base de données...',
+                    progress: 40
+                });
+                
+                // Commencer le polling toutes les 3 secondes
+                startDevicePolling();
+            }, 5000);
 
             // Timeout après 5 minutes
             setTimeout(() => {
-                if (deviceListener) {
-                    showTimeout();
-                }
+                showTimeout();
             }, 300000); // 5 minutes
+        }
+        
+        function startDevicePolling() {
+            checkDeviceExists();
+            
+            // Polling toutes les 3 secondes
+            const pollingInterval = setInterval(async () => {
+                const deviceFound = await checkDeviceExists();
+                if (deviceFound) {
+                    clearInterval(pollingInterval);
+                }
+            }, 3000);
+            
+            // Arrêter le polling après 5 minutes
+            setTimeout(() => {
+                clearInterval(pollingInterval);
+            }, 300000);
+        }
+        
+        async function checkDeviceExists() {
+            try {
+                console.log(`🔍 Vérification existence device: ${deviceId}`);
+                
+                const deviceRef = doc(db, 'devices', deviceId);
+                const deviceSnap = await getDoc(deviceRef);
+                
+                if (deviceSnap.exists()) {
+                    const deviceData = deviceSnap.data();
+                    console.log('✅ Device trouvé:', deviceData);
+                    
+                    updateStep(2, 'completed', '✅', 'Capteur enregistré avec succès');
+                    updateUI({
+                        icon: '✅',
+                        title: 'Pico trouvé !',
+                        description: 'Votre capteur est enregistré dans la base de données',
+                        progress: 70
+                    });
+                    
+                    if (deviceData.info?.isRegistered) {
+                        // Device enregistré, vérifier s'il y a des mesures
+                        setTimeout(() => {
+                            checkForMeasurements();
+                        }, 2000);
+                        return true;
+                    }
+                } else {
+                    console.log('⏳ Device pas encore trouvé...');
+                    return false;
+                }
+                
+            } catch (error) {
+                console.error('❌ Erreur vérification device:', error);
+                return false;
+            }
+            
+            return false;
         }
 
         async function checkForMeasurements() {
             try {
                 updateStep(3, 'active', '🔄', 'Attente de la première mesure');
+                updateUI({
+                    icon: '📊',
+                    title: 'Attente des mesures',
+                    description: 'Le Pico devrait commencer à envoyer des données...',
+                    progress: 80
+                });
                 
-                // Écouter les mesures
-                const measurementsRef = collection(db, 'measurements', deviceId, 'data');
-                const measurementsQuery = query(measurementsRef, orderBy('timestamp', 'desc'), limit(1));
+                console.log('📊 Vérification des mesures...');
                 
-                const measurementsListener = onSnapshot(measurementsQuery, async (snapshot) => {
-                    if (!snapshot.empty) {
-                        updateStep(3, 'completed', '✅', 'Première mesure reçue');
-                        updateStep(4, 'active', '🔄', 'Ajout à votre dashboard');
+                // Polling pour vérifier les mesures toutes les 5 secondes
+                const measurementPolling = setInterval(async () => {
+                    try {
+                        console.log(`📊 Recherche mesures pour device: ${deviceId}`);
                         
-                        // Ajouter le device à l'utilisateur
-                        await addDeviceToUser();
+                        // Essayer de lire directement depuis la sous-collection
+                        const measurementsRef = collection(db, 'measurements', deviceId, 'data');
+                        const measurementsQuery = query(measurementsRef, limit(1));
+                        const snapshot = await getDocs(measurementsQuery);
                         
-                        // Nettoyage et redirection
+                        if (!snapshot.empty) {
+                            console.log('✅ Mesures trouvées!');
+                            clearInterval(measurementPolling);
+                            
+                            updateStep(3, 'completed', '✅', 'Première mesure reçue');
+                            updateStep(4, 'active', '🔄', 'Ajout à votre dashboard');
+                            
+                            updateUI({
+                                icon: '🎉',
+                                title: 'Mesures détectées !',
+                                description: 'Votre Pico envoie des données correctement',
+                                progress: 90
+                            });
+                            
+                            // Ajouter le device à l'utilisateur
+                            setTimeout(async () => {
+                                await addDeviceToUser();
+                                cleanup();
+                                showSuccess();
+                            }, 2000);
+                        } else {
+                            console.log('⏳ Aucune mesure encore...');
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Erreur vérification mesures:', error);
+                    }
+                }, 5000);
+                
+                // Arrêter après 3 minutes si pas de mesures
+                setTimeout(() => {
+                    clearInterval(measurementPolling);
+                    console.log('⚠️ Timeout mesures - Ajout du device quand même');
+                    
+                    // Ajouter le device même sans mesures
+                    addDeviceToUser().then(() => {
                         cleanup();
                         showSuccess();
-                    }
-                });
+                    }).catch(error => {
+                        console.error('❌ Erreur ajout device:', error);
+                        showError('Erreur lors de l\'ajout du device');
+                    });
+                }, 180000); // 3 minutes
                 
             } catch (error) {
                 console.error('❌ Erreur surveillance mesures:', error);
+                showError('Erreur lors de la surveillance des mesures');
             }
         }
 
@@ -695,10 +793,8 @@
         }
 
         function cleanup() {
-            if (deviceListener) {
-                deviceListener();
-                deviceListener = null;
-            }
+            console.log('🧹 Nettoyage des intervals...');
+            
             if (timerInterval) {
                 clearInterval(timerInterval);
                 timerInterval = null;
