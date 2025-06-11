@@ -994,7 +994,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Configuration Firebase
         const firebaseConfig = {
@@ -1024,6 +1024,13 @@
                 showDashboard();
                 updateUserProfile(user);
                 loadUserDevices();
+                
+                // Rafraîchir les données toutes les 30 secondes
+                setInterval(() => {
+                    if (currentUser && document.getElementById('dashboardState').classList.contains('active')) {
+                        loadUserDevices();
+                    }
+                }, 30000);
             } else {
                 currentUser = null;
                 showLogin();
@@ -1126,7 +1133,44 @@
                     const deviceSnap = await getDoc(deviceRef);
                     
                     if (deviceSnap.exists()) {
-                        return { id: deviceId, ...deviceSnap.data() };
+                        const deviceData = { id: deviceId, ...deviceSnap.data() };
+                        
+                        // Récupérer la dernière mesure
+                        try {
+                            const measurementsRef = collection(db, 'devices', deviceId, 'measurements');
+                            const measurementsQuery = query(measurementsRef, orderBy('timestamp', 'desc'), limit(1));
+                            const measurementsSnap = await getDocs(measurementsQuery);
+                            
+                            if (!measurementsSnap.empty) {
+                                const lastMeasurement = measurementsSnap.docs[0].data();
+                                deviceData.lastMeasurement = lastMeasurement;
+                                
+                                // Calculer le statut basé sur la dernière mesure
+                                const now = new Date();
+                                const lastUpdate = lastMeasurement.timestamp?.toDate() || new Date(0);
+                                const timeDiff = now - lastUpdate;
+                                const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
+                                
+                                deviceData.info = {
+                                    ...deviceData.info,
+                                    status: isOnline ? 'online' : 'offline',
+                                    lastSeen: lastUpdate
+                                };
+                            } else {
+                                deviceData.info = {
+                                    ...deviceData.info,
+                                    status: 'offline'
+                                };
+                            }
+                        } catch (measurementError) {
+                            console.error(`Erreur récupération mesures pour ${deviceId}:`, measurementError);
+                            deviceData.info = {
+                                ...deviceData.info,
+                                status: 'offline'
+                            };
+                        }
+                        
+                        return deviceData;
                     }
                 } catch (error) {
                     console.error(`Erreur chargement device ${deviceId}:`, error);
@@ -1158,26 +1202,91 @@
         function createDeviceCard(device) {
             const card = document.createElement('div');
             card.className = 'device-card';
+            
+            // Préparer les données d'affichage
+            const deviceName = device.info?.name || device.id || 'Capteur My Pico';
+            const deviceLocation = device.info?.location?.address || 
+                                 (device.info?.location?.room ? `Pièce: ${device.info.location.room}` : 'Localisation non définie');
+            
+            // Données de la dernière mesure
+            const lastMeasurement = device.lastMeasurement;
+            let co2Value = '---';
+            let co2Color = 'var(--text-secondary)';
+            let lastUpdateText = '---';
+            
+            if (lastMeasurement) {
+                // Valeur CO2 avec couleur selon le niveau
+                co2Value = `${lastMeasurement.co2 || '---'} ppm`;
+                if (lastMeasurement.co2) {
+                    if (lastMeasurement.co2 < 800) {
+                        co2Color = 'var(--success)';
+                    } else if (lastMeasurement.co2 < 1200) {
+                        co2Color = 'var(--warning)';
+                    } else {
+                        co2Color = 'var(--danger)';
+                    }
+                }
+                
+                // Dernière mise à jour
+                if (lastMeasurement.timestamp) {
+                    const lastUpdate = lastMeasurement.timestamp.toDate();
+                    const now = new Date();
+                    const diffMinutes = Math.floor((now - lastUpdate) / (1000 * 60));
+                    
+                    if (diffMinutes < 1) {
+                        lastUpdateText = 'À l\'instant';
+                    } else if (diffMinutes < 60) {
+                        lastUpdateText = `Il y a ${diffMinutes}min`;
+                    } else if (diffMinutes < 1440) {
+                        const diffHours = Math.floor(diffMinutes / 60);
+                        lastUpdateText = `Il y a ${diffHours}h`;
+                    } else {
+                        const diffDays = Math.floor(diffMinutes / 1440);
+                        lastUpdateText = `Il y a ${diffDays}j`;
+                    }
+                }
+            }
+            
+            // Température et humidité additionnelles
+            let additionalMetrics = '';
+            if (lastMeasurement?.temperature !== undefined) {
+                additionalMetrics += `
+                    <div class="metric">
+                        <div class="metric-value" style="font-size: 1.5rem;">${lastMeasurement.temperature.toFixed(1)}°C</div>
+                        <div class="metric-label">Température</div>
+                    </div>
+                `;
+            }
+            if (lastMeasurement?.humidity !== undefined) {
+                additionalMetrics += `
+                    <div class="metric">
+                        <div class="metric-value" style="font-size: 1.5rem;">${lastMeasurement.humidity.toFixed(1)}%</div>
+                        <div class="metric-label">Humidité</div>
+                    </div>
+                `;
+            }
+            
             card.innerHTML = `
                 <div class="device-header">
                     <div class="device-info">
-                        <h3>${device.info?.name || 'Capteur My Pico'}</h3>
-                        <div class="device-location">${device.info?.location?.address || 'Localisation non définie'}</div>
+                        <h3>${deviceName}</h3>
+                        <div class="device-location">${deviceLocation}</div>
                     </div>
                     <div class="device-status ${device.info?.status === 'online' ? 'status-online' : 'status-offline'}">
                         ${device.info?.status === 'online' ? '🟢 En ligne' : '🔴 Hors ligne'}
                     </div>
                 </div>
                 
-                <div class="device-metrics">
+                <div class="device-metrics" style="grid-template-columns: ${additionalMetrics ? 'repeat(auto-fit, minmax(80px, 1fr))' : '1fr 1fr'};">
                     <div class="metric">
-                        <div class="metric-value">---</div>
+                        <div class="metric-value" style="color: ${co2Color};">${co2Value}</div>
                         <div class="metric-label">CO2 Actuel</div>
                     </div>
                     <div class="metric">
-                        <div class="metric-value">---</div>
+                        <div class="metric-value" style="font-size: 1.2rem;">${lastUpdateText}</div>
                         <div class="metric-label">Dernière MAJ</div>
                     </div>
+                    ${additionalMetrics}
                 </div>
                 
                 <div class="device-actions">
@@ -1301,12 +1410,41 @@
         };
 
         window.removeDevice = async function(deviceId) {
-            if (confirm('Êtes-vous sûr de vouloir supprimer ce capteur ?')) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce capteur de votre dashboard ?\n\nCela ne supprimera pas le capteur lui-même, mais seulement votre accès à ses données.')) {
                 try {
-                    // TODO: Implémenter la suppression
-                    showInfo('Suppression d\'appareil à implémenter');
+                    // Retirer l'appareil de la liste de l'utilisateur
+                    const userRef = doc(db, 'users', currentUser.uid);
+                    const userSnap = await getDoc(userRef);
+                    
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        const updatedDevices = (userData.devices || []).filter(id => id !== deviceId);
+                        
+                        await updateDoc(userRef, {
+                            devices: updatedDevices
+                        });
+                        
+                        // Optionnel: retirer le propriétaire du device si c'est nous
+                        const deviceRef = doc(db, 'devices', deviceId);
+                        const deviceSnap = await getDoc(deviceRef);
+                        
+                        if (deviceSnap.exists()) {
+                            const deviceData = deviceSnap.data();
+                            if (deviceData.info?.owner === currentUser.uid) {
+                                await updateDoc(deviceRef, {
+                                    'info.owner': null,
+                                    'info.isConfigured': false
+                                });
+                            }
+                        }
+                        
+                        // Recharger les appareils
+                        await loadUserDevices();
+                        showSuccess('Capteur retiré de votre dashboard');
+                    }
                 } catch (error) {
-                    showError('Erreur lors de la suppression');
+                    console.error('Erreur suppression appareil:', error);
+                    showError('Erreur lors de la suppression du capteur');
                 }
             }
         };
@@ -1323,15 +1461,13 @@
 
         document.getElementById('addDeviceForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
             const deviceData = {
                 deviceId: document.getElementById('deviceId').value,
                 name: document.getElementById('deviceName').value,
-                location: document.getElementById('deviceLocation').value,
                 room: document.getElementById('deviceRoom').value,
                 sharePublicly: document.getElementById('sharePublicly').checked
             };
-            addDevice(deviceData);
+            claimDevice(deviceData);
         });
 
         // Utilitaires
