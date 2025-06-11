@@ -994,7 +994,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Configuration Firebase
         const firebaseConfig = {
@@ -1024,6 +1024,13 @@
                 showDashboard();
                 updateUserProfile(user);
                 loadUserDevices();
+                
+                // Rafraîchir les données toutes les 30 secondes
+                setInterval(() => {
+                    if (currentUser && document.getElementById('dashboardState').classList.contains('active')) {
+                        loadUserDevices();
+                    }
+                }, 30000);
             } else {
                 currentUser = null;
                 showLogin();
@@ -1126,7 +1133,13 @@
                     const deviceSnap = await getDoc(deviceRef);
                     
                     if (deviceSnap.exists()) {
-                        return { id: deviceId, ...deviceSnap.data() };
+                        const deviceData = { id: deviceId, ...deviceSnap.data() };
+                        
+                        // Récupérer la dernière mesure
+                        const lastMeasurement = await getLastMeasurement(deviceId);
+                        deviceData.lastMeasurement = lastMeasurement;
+                        
+                        return deviceData;
                     }
                 } catch (error) {
                     console.error(`Erreur chargement device ${deviceId}:`, error);
@@ -1136,6 +1149,25 @@
 
             const devicesData = await Promise.all(devicesPromises);
             userDevices = devicesData.filter(device => device !== null);
+        }
+
+        async function getLastMeasurement(deviceId) {
+            try {
+                // Récupérer les dernières mesures depuis la sous-collection
+                const measurementsRef = collection(db, 'measurements', deviceId, 'data');
+                const q = query(measurementsRef, orderBy('timestamp', 'desc'), limit(1));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const lastDoc = querySnapshot.docs[0];
+                    return lastDoc.data();
+                }
+                
+                return null;
+            } catch (error) {
+                console.error(`Erreur récupération dernière mesure pour ${deviceId}:`, error);
+                return null;
+            }
         }
 
         function renderDevices() {
@@ -1158,24 +1190,63 @@
         function createDeviceCard(device) {
             const card = document.createElement('div');
             card.className = 'device-card';
+            
+            // Calculer le statut basé sur la dernière mesure
+            const now = new Date();
+            const lastMeasurement = device.lastMeasurement;
+            let isOnline = false;
+            let lastUpdateText = 'Jamais';
+            
+            if (lastMeasurement && lastMeasurement.timestamp) {
+                const lastUpdate = lastMeasurement.timestamp.toDate ? lastMeasurement.timestamp.toDate() : new Date(lastMeasurement.timestamp);
+                const timeDiff = now - lastUpdate;
+                isOnline = timeDiff < 10 * 60 * 1000; // En ligne si moins de 10 minutes
+                
+                // Formater la dernière mise à jour
+                if (timeDiff < 60 * 1000) {
+                    lastUpdateText = 'À l\'instant';
+                } else if (timeDiff < 60 * 60 * 1000) {
+                    lastUpdateText = `${Math.floor(timeDiff / (60 * 1000))} min`;
+                } else if (timeDiff < 24 * 60 * 60 * 1000) {
+                    lastUpdateText = `${Math.floor(timeDiff / (60 * 60 * 1000))} h`;
+                } else {
+                    lastUpdateText = `${Math.floor(timeDiff / (24 * 60 * 60 * 1000))} j`;
+                }
+            }
+            
+            // Récupérer les valeurs de CO2
+            const co2Value = lastMeasurement?.co2 || '---';
+            const co2Display = co2Value !== '---' ? `${co2Value} ppm` : '---';
+            
+            // Déterminer la couleur du CO2 selon les seuils
+            let co2Color = 'var(--text-secondary)';
+            if (co2Value !== '---') {
+                if (co2Value < 800) co2Color = 'var(--success)';
+                else if (co2Value < 1200) co2Color = 'var(--warning)';
+                else co2Color = 'var(--danger)';
+            }
+            
             card.innerHTML = `
                 <div class="device-header">
                     <div class="device-info">
-                        <h3>${device.info?.name || 'Capteur My Pico'}</h3>
-                        <div class="device-location">${device.info?.location?.address || 'Localisation non définie'}</div>
+                        <h3>${device.info?.name || device.id || 'Capteur My Pico'}</h3>
+                        <div class="device-location">
+                            ${device.info?.location?.room ? `📍 ${device.info.location.room}` : ''}
+                            ${device.info?.location?.address ? ` - ${device.info.location.address}` : 'Localisation non définie'}
+                        </div>
                     </div>
-                    <div class="device-status ${device.info?.status === 'online' ? 'status-online' : 'status-offline'}">
-                        ${device.info?.status === 'online' ? '🟢 En ligne' : '🔴 Hors ligne'}
+                    <div class="device-status ${isOnline ? 'status-online' : 'status-offline'}">
+                        ${isOnline ? '🟢 En ligne' : '🔴 Hors ligne'}
                     </div>
                 </div>
                 
                 <div class="device-metrics">
                     <div class="metric">
-                        <div class="metric-value">---</div>
+                        <div class="metric-value" style="color: ${co2Color};">${co2Display}</div>
                         <div class="metric-label">CO2 Actuel</div>
                     </div>
                     <div class="metric">
-                        <div class="metric-value">---</div>
+                        <div class="metric-value">${lastUpdateText}</div>
                         <div class="metric-label">Dernière MAJ</div>
                     </div>
                 </div>
@@ -1323,15 +1394,13 @@
 
         document.getElementById('addDeviceForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const formData = new FormData(e.target);
             const deviceData = {
                 deviceId: document.getElementById('deviceId').value,
                 name: document.getElementById('deviceName').value,
-                location: document.getElementById('deviceLocation').value,
                 room: document.getElementById('deviceRoom').value,
                 sharePublicly: document.getElementById('sharePublicly').checked
             };
-            addDevice(deviceData);
+            claimDevice(deviceData);
         });
 
         // Utilitaires
