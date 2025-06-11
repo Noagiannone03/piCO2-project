@@ -1136,8 +1136,23 @@
                         const deviceData = { id: deviceId, ...deviceSnap.data() };
                         
                         // Récupérer la dernière mesure
-                        const lastMeasurement = await getLastMeasurement(deviceId);
-                        deviceData.lastMeasurement = lastMeasurement;
+                        try {
+                            const measurementsRef = collection(db, 'measurements');
+                            const measurementsQuery = query(
+                                measurementsRef,
+                                where('deviceId', '==', deviceId),
+                                orderBy('timestamp', 'desc'),
+                                limit(1)
+                            );
+                            const measurementsSnap = await getDocs(measurementsQuery);
+                            
+                            if (!measurementsSnap.empty) {
+                                const lastMeasurement = measurementsSnap.docs[0].data();
+                                deviceData.lastMeasurement = lastMeasurement;
+                            }
+                        } catch (measurementError) {
+                            console.log(`Pas de mesures pour ${deviceId}:`, measurementError);
+                        }
                         
                         return deviceData;
                     }
@@ -1149,25 +1164,6 @@
 
             const devicesData = await Promise.all(devicesPromises);
             userDevices = devicesData.filter(device => device !== null);
-        }
-
-        async function getLastMeasurement(deviceId) {
-            try {
-                // Récupérer les dernières mesures depuis la sous-collection
-                const measurementsRef = collection(db, 'measurements', deviceId, 'data');
-                const q = query(measurementsRef, orderBy('timestamp', 'desc'), limit(1));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    const lastDoc = querySnapshot.docs[0];
-                    return lastDoc.data();
-                }
-                
-                return null;
-            } catch (error) {
-                console.error(`Erreur récupération dernière mesure pour ${deviceId}:`, error);
-                return null;
-            }
         }
 
         function renderDevices() {
@@ -1191,34 +1187,33 @@
             const card = document.createElement('div');
             card.className = 'device-card';
             
-            // Calculer le statut basé sur la dernière mesure
-            const now = new Date();
-            const lastMeasurement = device.lastMeasurement;
-            let isOnline = false;
-            let lastUpdateText = 'Jamais';
+            // Calculer le statut en ligne/hors ligne basé sur la dernière mesure
+            const isOnline = device.lastMeasurement && 
+                            (Date.now() - device.lastMeasurement.timestamp.toMillis()) < 5 * 60 * 1000; // 5 minutes
             
-            if (lastMeasurement && lastMeasurement.timestamp) {
-                const lastUpdate = lastMeasurement.timestamp.toDate ? lastMeasurement.timestamp.toDate() : new Date(lastMeasurement.timestamp);
-                const timeDiff = now - lastUpdate;
-                isOnline = timeDiff < 10 * 60 * 1000; // En ligne si moins de 10 minutes
+            // Formater les données
+            const co2Value = device.lastMeasurement?.co2 || '---';
+            const co2Display = co2Value !== '---' ? `${co2Value} ppm` : '---';
+            
+            let lastUpdateDisplay = '---';
+            if (device.lastMeasurement?.timestamp) {
+                const lastUpdate = new Date(device.lastMeasurement.timestamp.toMillis());
+                const now = new Date();
+                const diffMinutes = Math.floor((now - lastUpdate) / (1000 * 60));
                 
-                // Formater la dernière mise à jour
-                if (timeDiff < 60 * 1000) {
-                    lastUpdateText = 'À l\'instant';
-                } else if (timeDiff < 60 * 60 * 1000) {
-                    lastUpdateText = `${Math.floor(timeDiff / (60 * 1000))} min`;
-                } else if (timeDiff < 24 * 60 * 60 * 1000) {
-                    lastUpdateText = `${Math.floor(timeDiff / (60 * 60 * 1000))} h`;
+                if (diffMinutes < 1) {
+                    lastUpdateDisplay = 'À l\'instant';
+                } else if (diffMinutes < 60) {
+                    lastUpdateDisplay = `Il y a ${diffMinutes}min`;
+                } else if (diffMinutes < 1440) {
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    lastUpdateDisplay = `Il y a ${diffHours}h`;
                 } else {
-                    lastUpdateText = `${Math.floor(timeDiff / (24 * 60 * 60 * 1000))} j`;
+                    lastUpdateDisplay = lastUpdate.toLocaleDateString('fr-FR');
                 }
             }
             
-            // Récupérer les valeurs de CO2
-            const co2Value = lastMeasurement?.co2 || '---';
-            const co2Display = co2Value !== '---' ? `${co2Value} ppm` : '---';
-            
-            // Déterminer la couleur du CO2 selon les seuils
+            // Déterminer la couleur du CO2
             let co2Color = 'var(--text-secondary)';
             if (co2Value !== '---') {
                 if (co2Value < 800) co2Color = 'var(--success)';
@@ -1231,8 +1226,7 @@
                     <div class="device-info">
                         <h3>${device.info?.name || device.id || 'Capteur My Pico'}</h3>
                         <div class="device-location">
-                            ${device.info?.location?.room ? `📍 ${device.info.location.room}` : ''}
-                            ${device.info?.location?.address ? ` - ${device.info.location.address}` : 'Localisation non définie'}
+                            ${device.info?.location?.room ? `📍 ${device.info.location.room}` : '📍 Localisation non définie'}
                         </div>
                     </div>
                     <div class="device-status ${isOnline ? 'status-online' : 'status-offline'}">
@@ -1246,7 +1240,7 @@
                         <div class="metric-label">CO2 Actuel</div>
                     </div>
                     <div class="metric">
-                        <div class="metric-value">${lastUpdateText}</div>
+                        <div class="metric-value" style="font-size: 1.2rem;">${lastUpdateDisplay}</div>
                         <div class="metric-label">Dernière MAJ</div>
                     </div>
                 </div>
