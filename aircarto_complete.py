@@ -189,34 +189,143 @@ def firebase_request(method, path, data=None, max_retries=3):
     return None
 
 def get_geolocation():
-    """Récupère la géolocalisation via IP"""
-    try:
-        # Service gratuit de géolocalisation IP
-        response = urequests.get("http://ip-api.com/json/")
-        if response.status_code == 200:
-            data = response.json()
-            response.close()
+    """Récupère la géolocalisation via IP avec fallback"""
+    # Essayer plusieurs services de géolocalisation
+    services = [
+        "http://ip-api.com/json/",
+        "http://ipinfo.io/json",
+        "http://httpbin.org/ip"  # Service de test simple
+    ]
+    
+    for service_url in services:
+        try:
+            print(f"🌍 Test géolocalisation: {service_url}")
+            response = urequests.get(service_url, timeout=10)
             
-            if data.get('status') == 'success':
-                return {
-                    "lat": data.get('lat'),
-                    "lng": data.get('lon'),
-                    "address": f"{data.get('city', '')}, {data.get('country', '')}"
-                }
-        else:
-            response.close()
-    except Exception as e:
-        print(f"❌ Geolocation error: {e}")
+            if response.status_code == 200:
+                data = response.json()
+                response.close()
+                print(f"✅ Service géolocalisation OK: {service_url}")
+                
+                # Traitement selon le service
+                if "ip-api.com" in service_url and data.get('status') == 'success':
+                    return {
+                        "lat": data.get('lat', 43.2965),
+                        "lng": data.get('lon', 5.3698),
+                        "address": f"{data.get('city', 'Marseille')}, {data.get('country', 'France')}"
+                    }
+                elif "ipinfo.io" in service_url:
+                    loc = data.get('loc', '43.2965,5.3698').split(',')
+                    return {
+                        "lat": float(loc[0]),
+                        "lng": float(loc[1]),
+                        "address": f"{data.get('city', 'Marseille')}, {data.get('country', 'France')}"
+                    }
+                else:
+                    # Service de test réussi, utiliser valeurs par défaut
+                    print("✅ Connectivité Internet OK")
+                    break
+            else:
+                response.close()
+                print(f"❌ Service {service_url}: HTTP {response.status_code}")
+                
+        except Exception as e:
+            print(f"❌ Erreur service {service_url}: {e}")
+            continue
     
     # Valeurs par défaut (Marseille)
+    print("🏠 Utilisation géolocalisation par défaut: Marseille")
     return {
         "lat": 43.2965,
         "lng": 5.3698,
         "address": "Marseille, France"
     }
 
+def diagnose_network():
+    """Diagnostic réseau complet"""
+    try:
+        wlan = network.WLAN(network.STA_IF)
+        if not wlan.isconnected():
+            print("❌ WiFi non connecté")
+            return False
+        
+        config = wlan.ifconfig()
+        ip, subnet, gateway, dns = config
+        
+        print("🔍 === DIAGNOSTIC RÉSEAU ===")
+        print(f"📱 IP Pico: {ip}")
+        print(f"🌐 Masque: {subnet}")
+        print(f"🚪 Passerelle: {gateway}")
+        print(f"🔍 DNS: {dns}")
+        print(f"📶 RSSI: {wlan.status('rssi')} dBm")
+        print(f"📡 SSID: {wlan.config('essid')}")
+        
+        # Test ping passerelle (simulation)
+        print(f"🏓 Test passerelle {gateway}...")
+        try:
+            import socket
+            s = socket.socket()
+            s.settimeout(5)
+            result = s.connect_ex((gateway, 80))
+            s.close()
+            
+            if result == 0:
+                print("✅ Passerelle accessible")
+                return True
+            else:
+                print(f"❌ Passerelle inaccessible (code: {result})")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Test passerelle échoué: {e}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Erreur diagnostic: {e}")
+        return False
+
+def configure_dns():
+    """Configure des DNS publics si nécessaire"""
+    try:
+        wlan = network.WLAN(network.STA_IF)
+        if wlan.isconnected():
+            current_config = wlan.ifconfig()
+            ip, subnet, gateway, dns = current_config
+            
+            # Essayer différents DNS
+            dns_servers = ["8.8.8.8", "1.1.1.1", "208.67.222.222"]  # Google, Cloudflare, OpenDNS
+            
+            for new_dns in dns_servers:
+                if new_dns != dns:  # Seulement si différent
+                    print(f"🔧 Test DNS: {dns} → {new_dns}")
+                    
+                    try:
+                        # Reconfigurer avec nouveau DNS
+                        wlan.ifconfig((ip, subnet, gateway, new_dns))
+                        time.sleep(3)
+                        
+                        # Test rapide
+                        test_response = urequests.get("http://8.8.8.8", timeout=10)
+                        if test_response.status_code == 200:
+                            test_response.close()
+                            print(f"✅ DNS {new_dns} fonctionne!")
+                            return True
+                        test_response.close()
+                        
+                    except Exception as e:
+                        print(f"❌ DNS {new_dns} échoué: {e}")
+                        continue
+            
+            print("❌ Aucun DNS ne fonctionne")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Erreur configuration DNS: {e}")
+    
+    return False
+
 def register_device_firebase():
-    """Enregistre le device dans Firebase"""
+    """Enregistre le device dans Firebase avec retry intelligent"""
     global device_registered
     
     print("📝 Enregistrement Firebase...")
@@ -224,6 +333,21 @@ def register_device_firebase():
         mascot.draw_config_screen("firebase_register", "Enregistrement", "Firebase...")
     else:
         display_status("Enregistrement", "Firebase...")
+    
+    # Test de connectivité avant Firebase
+    if not test_internet_connectivity():
+        print("❌ Pas de connectivité Internet pour Firebase")
+        
+        # Essayer de reconfigurer les DNS
+        print("🔧 Tentative reconfiguration DNS...")
+        if configure_dns():
+            print("🔄 Nouveau test après DNS...")
+            time.sleep(3)
+            if not test_internet_connectivity():
+                print("❌ Toujours pas de connectivité après DNS")
+                return False
+        else:
+            return False
     
     device_info = get_device_info()
     location = get_geolocation()
@@ -330,6 +454,7 @@ def register_device_firebase():
 def send_measurement_firebase(co2_ppm, status):
     """Envoie une mesure vers Firebase"""
     if not device_registered:
+        print("❌ Device non enregistré, impossible d'envoyer vers Firebase")
         return False
     
     # Vérifier la connectivité WiFi
@@ -398,8 +523,55 @@ def time_to_iso():
 # GESTION WIFI & CONFIGURATION
 # =====================================================
 
+def test_internet_connectivity():
+    """Test la connectivité Internet avec méthodes optimisées"""
+    # Tests par ordre de fiabilité (IP directes d'abord)
+    test_configs = [
+        # Tests IP directes (plus rapides, pas de DNS)
+        {"url": "http://1.1.1.1", "desc": "Cloudflare DNS", "timeout": 8},
+        {"url": "http://8.8.8.8", "desc": "Google DNS", "timeout": 8},
+        {"url": "http://208.67.222.222", "desc": "OpenDNS", "timeout": 8},
+        # Tests avec noms de domaine (si IP directes échouent)
+        {"url": "http://httpbin.org/ip", "desc": "Service test HTTP", "timeout": 12},
+        {"url": "http://example.com", "desc": "Example.com", "timeout": 12}
+    ]
+    
+    for test in test_configs:
+        try:
+            print(f"🌐 Test {test['desc']}: {test['url']}")
+            response = urequests.get(test['url'], timeout=test['timeout'])
+            
+            if response.status_code == 200:
+                response.close()
+                print(f"✅ Internet OK via {test['desc']}")
+                
+                # Si c'est un test IP directe qui réussit, on s'arrête là
+                if test['url'].startswith('http://1.1.1.1') or test['url'].startswith('http://8.8.8.8') or test['url'].startswith('http://208.67.222.222'):
+                    print(f"🚀 Connectivité confirmée, arrêt des tests")
+                
+                return True
+            else:
+                print(f"⚠️ HTTP {response.status_code} pour {test['desc']}")
+                response.close()
+                
+        except OSError as e:
+            error_code = str(e)
+            if "-2" in error_code:
+                print(f"❌ DNS/Résolution: {test['desc']} (erreur -2)")
+            elif "110" in error_code or "ETIMEDOUT" in error_code:
+                print(f"❌ Timeout: {test['desc']} (pas de réponse)")
+            elif "113" in error_code or "EHOSTUNREACH" in error_code:
+                print(f"❌ Host inaccessible: {test['desc']}")
+            else:
+                print(f"❌ Erreur réseau {test['desc']}: {e}")
+        except Exception as e:
+            print(f"❌ Erreur {test['desc']}: {e}")
+    
+    print("❌ Aucune connectivité Internet détectée")
+    return False
+
 def connect_wifi(ssid=None, password=None):
-    """Tente de se connecter au WiFi"""
+    """Tente de se connecter au WiFi avec test de connectivité"""
     global wifi_connected
     
     # Charger config si pas de paramètres fournis
@@ -435,22 +607,49 @@ def connect_wifi(ssid=None, password=None):
     
     if wlan.isconnected():
         ip = wlan.ifconfig()[0]
+        gateway = wlan.ifconfig()[2]
+        dns = wlan.ifconfig()[3]
+        
         print(f"✅ WiFi connecté! IP: {ip}")
-        wifi_connected = True
+        print(f"🌐 Passerelle: {gateway}, DNS: {dns}")
         
-        # Sauvegarder config WiFi
-        config = load_config()
-        config['wifi'] = {'ssid': ssid, 'password': password}
-        save_config(config)
-        
+        # Test de connectivité Internet
+        print("🔍 Test de connectivité Internet...")
         if mascot:
-            mascot.draw_config_screen("wifi_success", "WiFi connecté!", ip)
-            time.sleep(2)
+            mascot.draw_config_screen("internet_test", "Test Internet", "Vérification...")
         else:
-            display_status("WiFi connecté", ip)
-            time.sleep(2)
+            display_status("Test Internet", "Vérification...")
         
-        return True
+        internet_ok = test_internet_connectivity()
+        
+        if internet_ok:
+            wifi_connected = True
+            
+            # Sauvegarder config WiFi
+            config = load_config()
+            config['wifi'] = {'ssid': ssid, 'password': password}
+            save_config(config)
+            
+            if mascot:
+                mascot.draw_config_screen("wifi_success", "WiFi + Internet OK!", ip)
+                time.sleep(2)
+            else:
+                display_status("WiFi + Internet OK", ip)
+                time.sleep(2)
+            
+            return True
+        else:
+            print("⚠️ WiFi connecté mais pas d'Internet")
+            wifi_connected = False
+            
+            if mascot:
+                mascot.draw_config_screen("internet_fail", "WiFi OK", "Pas d'Internet")
+                time.sleep(3)
+            else:
+                display_status("WiFi OK", "Pas d'Internet")
+                time.sleep(3)
+            
+            return False
     else:
         print("❌ Connexion WiFi échouée")
         wifi_connected = False
@@ -496,7 +695,7 @@ def start_configuration_mode():
     print(f"🌐 IP: {ip}")
     
     ap_mode = True
-    
+
     # Afficher les infos de connexion
     if mascot:
         mascot.draw_config_screen("show_ap_info", f"WiFi: {AP_SSID}", f"Page: {ip}")
@@ -538,7 +737,7 @@ def create_config_portal(ap_ip):
             <div class="device-id">
                 <strong>Device ID: {DEVICE_ID}</strong><br>
                 <small>Notez cet ID pour l'ajout sur {WEBSITE_URL}</small>
-            </div>
+                </div>
             
             <div class="instructions">
                 <strong>📋 Instructions:</strong>
@@ -600,7 +799,7 @@ def create_config_portal(ap_ip):
             
             <div class="progress-bar">
                 <div class="progress-fill"></div>
-            </div>
+        </div>
             
             <div class="countdown" id="countdown">5</div>
             
@@ -832,7 +1031,13 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, firebase_status):
     
     # Statuts connexion
     wifi_icon = "📶" if wifi_connected else "❌"
-    firebase_icon = "☁️" if firebase_status else "📡"
+    
+    # Gestion des statuts Firebase
+    if firebase_status:
+        firebase_icon = "☁️"  # Cloud pour Firebase OK
+    else:
+        firebase_icon = "❌"  # Erreur Firebase
+        
     oled.text(f"{wifi_icon}{firebase_icon}", 85, 0)
     
     oled.hline(0, 10, 128, 1)
@@ -914,18 +1119,107 @@ def main():
             print("🔌 Tentative connexion WiFi existant...")
             if not connect_wifi():
                 print("❌ Échec connexion, mode reconfig")
-                ap, ip = start_configuration_mode()
-                wifi_configured = create_config_portal(ip)
                 
-                if not wifi_configured:
-                    return
+                # Diagnostic réseau avant de passer en mode config
+                print("🔍 Diagnostic réseau complet...")
+                wlan = network.WLAN(network.STA_IF)
+                
+                if wlan.isconnected():
+                    print("⚠️ WiFi connecté mais problème Internet")
+                    
+                    # Diagnostic complet
+                    gateway_ok = diagnose_network()
+                    
+                    if gateway_ok:
+                        print("🔧 Passerelle OK, problème DNS/Internet")
+                        
+                        # Essayer de réparer DNS
+                        if configure_dns():
+                            print("🔄 Test après réparation DNS...")
+                            time.sleep(5)
+                            
+                            if test_internet_connectivity():
+                                print("✅ Connectivité restaurée via DNS!")
+                            else:
+                                print("❌ DNS réparé mais toujours pas d'Internet")
+                                print("🔄 Tentative reconnexion complète...")
+                                
+                                # Forcer reconnexion WiFi
+                                config = load_config()
+                                if config.get('wifi'):
+                                    wlan.disconnect()
+                                    time.sleep(2)
+                                    wlan.active(False)
+                                    time.sleep(2)
+                                    wlan.active(True)
+                                    time.sleep(2)
+                                    
+                                    if connect_wifi():
+                                        print("✅ Reconnexion WiFi réussie!")
+                                    else:
+                                        print("❌ Échec reconnexion, mode config")
+                                        ap, ip = start_configuration_mode()
+                                        wifi_configured = create_config_portal(ip)
+                                if not wifi_configured:
+                                    return
+                    else:
+                        print("❌ Problème passerelle/routeur")
+                        print("🔄 Reconnexion WiFi nécessaire...")
+                        
+                        # Forcer reconnexion
+                        config = load_config()
+                        if config.get('wifi'):
+                            wlan.disconnect()
+                            time.sleep(3)
+                            
+                            if connect_wifi():
+                                print("✅ Reconnexion réussie!")
+                            else:
+                                print("❌ Reconnexion échouée, mode config")
+                                ap, ip = start_configuration_mode()
+                                wifi_configured = create_config_portal(ip)
+                                if not wifi_configured:
+                                    return
+                else:
+                    print("❌ WiFi non connecté, mode reconfig")
+                    ap, ip = start_configuration_mode()
+                    wifi_configured = create_config_portal(ip)
+                    
+                    if not wifi_configured:
+                        return
         
         # Vérifier si device déjà enregistré
         if not config.get('registered'):
             print("📝 Première connexion - Enregistrement Firebase")
-            if not register_device_firebase():
-                print("❌ Échec enregistrement Firebase")
-                return
+            
+            # Essayer l'enregistrement Firebase avec retry
+            firebase_attempts = 0
+            max_firebase_attempts = 3
+            
+            while firebase_attempts < max_firebase_attempts:
+                firebase_attempts += 1
+                print(f"🔄 Tentative Firebase {firebase_attempts}/{max_firebase_attempts}")
+                
+                if register_device_firebase():
+                    break
+                elif firebase_attempts < max_firebase_attempts:
+                    print(f"⏳ Attente avant nouvelle tentative...")
+                    time.sleep(10)
+                else:
+                    print("❌ ÉCHEC CRITIQUE: Impossible d'enregistrer sur Firebase!")
+                    print("🚨 Le capteur ne peut pas fonctionner sans Firebase")
+                    print("🔄 Redémarrage nécessaire pour réessayer...")
+                    
+                    if mascot:
+                        mascot.draw_config_screen("firebase_critical", "ERREUR Firebase", "Redémarrage requis")
+                        time.sleep(5)
+                    else:
+                        display_status("ERREUR Firebase", "Redémarrage requis")
+                        time.sleep(5)
+                    
+                    # Redémarrer le système
+                    import machine
+                    machine.reset()
         else:
             device_registered = True
             print("✅ Device déjà enregistré")
@@ -990,10 +1284,19 @@ def main():
             
             if co2_ppm is not None:
                 print(f"CO2: {co2_ppm} ppm - {status}")
+                print(f"🔍 Debug: device_registered = {device_registered}")
                 
-                # Envoi Firebase
+                # Envoi Firebase obligatoire
                 firebase_success = send_measurement_firebase(co2_ppm, status)
                 last_firebase_success = firebase_success
+                
+                if not firebase_success:
+                    print("❌ ERREUR: Impossible d'envoyer vers Firebase!")
+                    print("🔄 Tentative de ré-enregistrement...")
+                    if register_device_firebase():
+                        print("✅ Ré-enregistrement réussi, retry envoi...")
+                        firebase_success = send_measurement_firebase(co2_ppm, status)
+                        last_firebase_success = firebase_success
             else:
                 print("❌ Erreur lecture CO2")
                 last_firebase_success = False

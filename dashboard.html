@@ -1111,14 +1111,25 @@
         // Gestion des appareils
         async function loadUserDevices() {
             try {
+                console.log('🔄 Chargement des devices utilisateur...');
                 const userRef = doc(db, 'users', currentUser.uid);
                 const userSnap = await getDoc(userRef);
                 
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
                     userDevices = userData.devices || [];
-                    await loadDevicesDetails();
-                    renderDevices();
+                    console.log('📋 Liste des devices:', userDevices);
+                    
+                    if (userDevices.length > 0) {
+                        await loadDevicesDetails();
+                        renderDevices();
+                        console.log('✅ Devices chargés avec succès:', userDevices.length);
+                    } else {
+                        console.log('📭 Aucun device trouvé pour cet utilisateur');
+                        renderDevices(); // Affiche quand même le bouton d'ajout
+                    }
+                } else {
+                    console.log('❌ Profil utilisateur non trouvé');
                 }
             } catch (error) {
                 console.error('Erreur chargement appareils:', error);
@@ -1134,20 +1145,68 @@
                     
                     if (deviceSnap.exists()) {
                         const deviceData = { id: deviceId, ...deviceSnap.data() };
+                        console.log(`📱 Device data pour ${deviceId}:`, deviceData);
                         
-                        // Récupérer la dernière mesure
+                        // Récupérer la dernière mesure depuis measurements/{deviceId}/data
                         try {
-                            const measurementsRef = collection(db, 'devices', deviceId, 'measurements');
+                            console.log(`🔍 Recherche mesures pour device: ${deviceId}`);
+                            const measurementsRef = collection(db, 'measurements', deviceId, 'data');
                             const measurementsQuery = query(measurementsRef, orderBy('timestamp', 'desc'), limit(1));
                             const measurementsSnap = await getDocs(measurementsQuery);
                             
+                            console.log(`📊 Nombre de mesures trouvées pour ${deviceId}:`, measurementsSnap.size);
+                            
                             if (!measurementsSnap.empty) {
                                 const lastMeasurement = measurementsSnap.docs[0].data();
-                                deviceData.lastMeasurement = lastMeasurement;
+                                console.log(`📈 Dernière mesure pour ${deviceId}:`, lastMeasurement);
+                                
+                                // Gérer les deux formats possibles : SDK normal et API REST
+                                let processedMeasurement;
+                                
+                                if (lastMeasurement.fields) {
+                                    // Format API REST Firestore (utilisé par le Pico)
+                                    console.log('📄 Format API REST détecté');
+                                    processedMeasurement = {
+                                        co2: parseInt(lastMeasurement.fields.co2_ppm?.integerValue) || null,
+                                        co2_ppm: parseInt(lastMeasurement.fields.co2_ppm?.integerValue) || null,
+                                        air_quality: lastMeasurement.fields.air_quality?.stringValue,
+                                        timestamp: lastMeasurement.fields.timestamp?.timestampValue ? 
+                                                 new Date(lastMeasurement.fields.timestamp.timestampValue) : null,
+                                        temperature: parseFloat(lastMeasurement.fields.temperature?.doubleValue),
+                                        humidity: parseFloat(lastMeasurement.fields.humidity?.doubleValue)
+                                    };
+                                } else {
+                                    // Format SDK normal
+                                    console.log('📄 Format SDK normal détecté');
+                                    processedMeasurement = {
+                                        co2: lastMeasurement.co2_ppm || lastMeasurement.co2 || null,
+                                        co2_ppm: lastMeasurement.co2_ppm || lastMeasurement.co2 || null,
+                                        air_quality: lastMeasurement.air_quality,
+                                        timestamp: lastMeasurement.timestamp,
+                                        temperature: lastMeasurement.temperature,
+                                        humidity: lastMeasurement.humidity
+                                    };
+                                }
+                                
+                                deviceData.lastMeasurement = processedMeasurement;
                                 
                                 // Calculer le statut basé sur la dernière mesure
                                 const now = new Date();
-                                const lastUpdate = lastMeasurement.timestamp?.toDate() || new Date(0);
+                                let lastUpdate = new Date(0);
+                                
+                                if (processedMeasurement.timestamp) {
+                                    if (processedMeasurement.timestamp.toDate) {
+                                        // Format Firestore Timestamp
+                                        lastUpdate = processedMeasurement.timestamp.toDate();
+                                    } else if (processedMeasurement.timestamp instanceof Date) {
+                                        // Format Date normal
+                                        lastUpdate = processedMeasurement.timestamp;
+                                    } else if (typeof processedMeasurement.timestamp === 'string') {
+                                        // Format ISO string
+                                        lastUpdate = new Date(processedMeasurement.timestamp);
+                                    }
+                                }
+                                
                                 const timeDiff = now - lastUpdate;
                                 const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
                                 
@@ -1157,16 +1216,29 @@
                                     lastSeen: lastUpdate
                                 };
                             } else {
+                                // Aucune mesure trouvée, utiliser lastSeen du device pour le statut
+                                const now = new Date();
+                                const lastSeen = deviceData.info?.lastSeen?.toDate() || new Date(0);
+                                const timeDiff = now - lastSeen;
+                                const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
+                                
                                 deviceData.info = {
                                     ...deviceData.info,
-                                    status: 'offline'
+                                    status: isOnline ? 'online' : 'offline'
                                 };
                             }
                         } catch (measurementError) {
                             console.error(`Erreur récupération mesures pour ${deviceId}:`, measurementError);
+                            
+                            // Fallback sur lastSeen du device
+                            const now = new Date();
+                            const lastSeen = deviceData.info?.lastSeen?.toDate() || new Date(0);
+                            const timeDiff = now - lastSeen;
+                            const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
+                            
                             deviceData.info = {
                                 ...deviceData.info,
-                                status: 'offline'
+                                status: isOnline ? 'online' : 'offline'
                             };
                         }
                         
@@ -1215,34 +1287,50 @@
             let lastUpdateText = '---';
             
             if (lastMeasurement) {
-                // Valeur CO2 avec couleur selon le niveau
-                co2Value = `${lastMeasurement.co2 || '---'} ppm`;
-                if (lastMeasurement.co2) {
-                    if (lastMeasurement.co2 < 800) {
+                // Valeur CO2 avec couleur selon le niveau (le Pico envoie co2_ppm)
+                const co2Ppm = lastMeasurement.co2_ppm || lastMeasurement.co2;
+                co2Value = co2Ppm ? `${co2Ppm} ppm` : '--- ppm';
+                
+                if (co2Ppm && typeof co2Ppm === 'number') {
+                    if (co2Ppm < 800) {
                         co2Color = 'var(--success)';
-                    } else if (lastMeasurement.co2 < 1200) {
+                    } else if (co2Ppm < 1200) {
                         co2Color = 'var(--warning)';
                     } else {
                         co2Color = 'var(--danger)';
                     }
                 }
                 
-                // Dernière mise à jour
+                // Dernière mise à jour - gestion des différents formats de timestamp
                 if (lastMeasurement.timestamp) {
-                    const lastUpdate = lastMeasurement.timestamp.toDate();
-                    const now = new Date();
-                    const diffMinutes = Math.floor((now - lastUpdate) / (1000 * 60));
+                    let lastUpdate;
                     
-                    if (diffMinutes < 1) {
-                        lastUpdateText = 'À l\'instant';
-                    } else if (diffMinutes < 60) {
-                        lastUpdateText = `Il y a ${diffMinutes}min`;
-                    } else if (diffMinutes < 1440) {
-                        const diffHours = Math.floor(diffMinutes / 60);
-                        lastUpdateText = `Il y a ${diffHours}h`;
-                    } else {
-                        const diffDays = Math.floor(diffMinutes / 1440);
-                        lastUpdateText = `Il y a ${diffDays}j`;
+                    if (lastMeasurement.timestamp.toDate) {
+                        // Format Firestore Timestamp
+                        lastUpdate = lastMeasurement.timestamp.toDate();
+                    } else if (lastMeasurement.timestamp instanceof Date) {
+                        // Format Date normal
+                        lastUpdate = lastMeasurement.timestamp;
+                    } else if (typeof lastMeasurement.timestamp === 'string') {
+                        // Format ISO string
+                        lastUpdate = new Date(lastMeasurement.timestamp);
+                    }
+                    
+                    if (lastUpdate && !isNaN(lastUpdate.getTime())) {
+                        const now = new Date();
+                        const diffMinutes = Math.floor((now - lastUpdate) / (1000 * 60));
+                        
+                        if (diffMinutes < 1) {
+                            lastUpdateText = 'À l\'instant';
+                        } else if (diffMinutes < 60) {
+                            lastUpdateText = `Il y a ${diffMinutes}min`;
+                        } else if (diffMinutes < 1440) {
+                            const diffHours = Math.floor(diffMinutes / 60);
+                            lastUpdateText = `Il y a ${diffHours}h`;
+                        } else {
+                            const diffDays = Math.floor(diffMinutes / 1440);
+                            lastUpdateText = `Il y a ${diffDays}j`;
+                        }
                     }
                 }
             }
@@ -1447,6 +1535,75 @@
                     showError('Erreur lors de la suppression du capteur');
                 }
             }
+        };
+
+        // Fonction de diagnostic Firestore (à supprimer après test)
+        window.testFirestore = async function() {
+            if (!currentUser) {
+                console.log('❌ Pas d\'utilisateur connecté');
+                return;
+            }
+            
+            console.log('🔍 DIAGNOSTIC FIRESTORE');
+            console.log('='.repeat(50));
+            
+            try {
+                // 1. Vérifier le profil utilisateur
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    console.log('👤 Profil utilisateur:', userData);
+                    console.log('📱 Devices de l\'utilisateur:', userData.devices);
+                    
+                    if (userData.devices && userData.devices.length > 0) {
+                        const deviceId = userData.devices[0];
+                        console.log(`🔍 Test device: ${deviceId}`);
+                        
+                        // 2. Vérifier le device
+                        const deviceRef = doc(db, 'devices', deviceId);
+                        const deviceSnap = await getDoc(deviceRef);
+                        
+                        if (deviceSnap.exists()) {
+                            console.log('📱 Device data:', deviceSnap.data());
+                        } else {
+                            console.log('❌ Device non trouvé dans devices/');
+                        }
+                        
+                        // 3. Vérifier les mesures dans différents paths
+                        const paths = [
+                            ['measurements', deviceId, 'data'],
+                            ['devices', deviceId, 'measurements'],
+                            ['measurements', deviceId],
+                        ];
+                        
+                        for (const path of paths) {
+                            try {
+                                console.log(`🔍 Test path: ${path.join('/')}`);
+                                const testRef = collection(db, ...path);
+                                const testQuery = query(testRef, orderBy('timestamp', 'desc'), limit(3));
+                                const testSnap = await getDocs(testQuery);
+                                
+                                console.log(`📊 Résultats pour ${path.join('/')}: ${testSnap.size} documents`);
+                                
+                                testSnap.forEach((doc, index) => {
+                                    console.log(`📈 Document ${index + 1}:`, doc.data());
+                                });
+                            } catch (e) {
+                                console.log(`❌ Erreur pour path ${path.join('/')}: ${e.message}`);
+                            }
+                        }
+                    }
+                } else {
+                    console.log('❌ Profil utilisateur non trouvé');
+                }
+            } catch (error) {
+                console.error('❌ Erreur diagnostic:', error);
+            }
+            
+            console.log('='.repeat(50));
+            console.log('ℹ️  Tapez testFirestore() dans la console pour relancer');
         };
 
         // Event listeners
