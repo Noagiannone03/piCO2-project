@@ -2377,6 +2377,9 @@
         let selectedReportData = null;
         let selectedReportType = null;
 
+        // Rendre mapDevices accessible globalement
+        window.mapDevices = mapDevices;
+
         async function loadCollaborativeMap() {
             try {
                 console.log('🗺️ Chargement carte collaborative Leaflet...');
@@ -2426,8 +2429,8 @@
                                 deviceData.avgCO2 = Math.round(totalCO2 / validCount);
                                 deviceData.lastMeasurement = measurements[0];
                                 
-                                // Ajouter des coordonnées simulées pour Marseille
-                                deviceData.coordinates = getRandomMarseilleCoordinates();
+                                // Utiliser les vraies coordonnées du device ou par défaut Marseille
+                                deviceData.coordinates = getRealDeviceCoordinates(deviceData);
                                 
                                 mapDevices.push(deviceData);
                             }
@@ -2442,6 +2445,9 @@
                     console.log('📊 Aucun device trouvé, ajout de données de démonstration');
                     mapDevices = generateDemoDevices();
                 }
+                
+                // Mettre à jour la référence globale
+                window.mapDevices = mapDevices;
                 
                 console.log(`🗺️ ${mapDevices.length} devices chargés pour la carte`);
                 
@@ -2459,9 +2465,41 @@
             }
         }
 
-        function getRandomMarseilleCoordinates() {
-            // Coordonnées précises de différents quartiers de Marseille
-            const marseilleQuartiers = [
+        function getRealDeviceCoordinates(device) {
+            // 1. Utiliser les vraies coordonnées du device si disponibles
+            if (device.location && device.location.lat && device.location.lng) {
+                return {
+                    lat: device.location.lat,
+                    lng: device.location.lng,
+                    quartier: device.location.address || device.location.quartier || 'Marseille'
+                };
+            }
+            
+            // 2. Vérifier aussi dans device.coordinates
+            if (device.coordinates && device.coordinates.lat && device.coordinates.lng) {
+                return device.coordinates;
+            }
+            
+            // 3. Vérifier dans les métadonnées (si présentes)
+            if (device.metadata && device.metadata.latitude && device.metadata.longitude) {
+                return {
+                    lat: parseFloat(device.metadata.latitude),
+                    lng: parseFloat(device.metadata.longitude),
+                    quartier: device.metadata.address || device.metadata.location || 'Marseille'
+                };
+            }
+            
+            // 4. Vérifier dans device.info s'il y a des coordonnées
+            if (device.info && device.info.lat && device.info.lng) {
+                return {
+                    lat: parseFloat(device.info.lat),
+                    lng: parseFloat(device.info.lng),
+                    quartier: device.info.address || device.info.location || 'Marseille'
+                };
+            }
+            
+            // 5. Fallback: coordonnées par défaut de Marseille selon l'ID du device
+            const defaultCoordinates = [
                 { lat: 43.2965, lng: 5.3698, name: "Centre-ville" },
                 { lat: 43.2803, lng: 5.3694, name: "Vieux-Port" },
                 { lat: 43.3040, lng: 5.3779, name: "La Plaine" },
@@ -2472,13 +2510,15 @@
                 { lat: 43.2768, lng: 5.4015, name: "Castellane" }
             ];
             
-            const quartier = marseilleQuartiers[Math.floor(Math.random() * marseilleQuartiers.length)];
+            // Utiliser un index basé sur l'ID du device pour une position consistante
+            const deviceIdHash = device.id ? device.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0) : 0;
+            const index = deviceIdHash % defaultCoordinates.length;
+            const selectedQuartier = defaultCoordinates[index];
             
-            // Ajouter un petit décalage aléatoire
             return {
-                lat: quartier.lat + (Math.random() - 0.5) * 0.01,
-                lng: quartier.lng + (Math.random() - 0.5) * 0.01,
-                quartier: quartier.name
+                lat: selectedQuartier.lat + (Math.random() - 0.5) * 0.005, // Petit décalage aléatoire
+                lng: selectedQuartier.lng + (Math.random() - 0.5) * 0.005,
+                quartier: selectedQuartier.name
             };
         }
 
@@ -2526,6 +2566,11 @@
                 const marker = L.marker([device.coordinates.lat, device.coordinates.lng], { icon })
                     .addTo(map);
                 
+                // Ajouter un ID unique au device et le stocker
+                const deviceIndex = mapDevices.indexOf(device);
+                device._mapIndex = deviceIndex;
+                window.mapDevices[deviceIndex] = device;
+
                 // Popup avec infos du device
                 const popupContent = `
                     <div style="min-width: 200px;">
@@ -2533,7 +2578,7 @@
                             ${device.info?.name || device.id}
                         </h3>
                         <p style="margin: 0.25rem 0; color: var(--text-secondary);">
-                            📍 ${device.coordinates.quartier || 'Marseille'}
+                            📍 ${device.coordinates?.quartier || device.coordinates?.address || 'Marseille'}
                         </p>
                         <p style="margin: 0.25rem 0; font-size: 1.1rem;">
                             <strong style="color: ${color};">${device.avgCO2} ppm CO2</strong>
@@ -2541,7 +2586,7 @@
                         <p style="margin: 0.25rem 0; color: var(--text-secondary);">
                             ${getCO2Label(device.avgCO2)}
                         </p>
-                        <button onclick="window.openDeviceDetails(mapDevices[${mapDevices.indexOf(device)}])" 
+                        <button onclick="window.openDeviceDetails(window.mapDevices[${deviceIndex}])" 
                                 style="
                                     margin-top: 0.75rem;
                                     padding: 0.5rem 1rem;
@@ -2631,6 +2676,11 @@
             ];
             
             return demoDevices;
+        }
+        
+        // Mettre à jour window.mapDevices après chargement
+        function updateGlobalMapDevices() {
+            window.mapDevices = mapDevices;
         }
 
         function getCO2Class(co2Value) {
