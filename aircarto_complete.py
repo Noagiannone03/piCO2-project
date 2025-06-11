@@ -1,7 +1,11 @@
 """
-AirCarto - Détecteur CO2 avec Raspberry Pico 2W
-Capteur CO2 MH-Z19C + Écran OLED SSD1309 (SPI) + WiFi + Serveur
-Mise à jour toutes les 30 secondes avec envoi de données
+My Pico v3.0 - Capteur CO2 avec auto-enregistrement Firebase
+Capteur CO2 MH-Z19C + Écran OLED SSD1309 (SPI) + WiFi + Firebase
+
+Configuration automatique:
+1. Premier boot → Mode configuration → Point d'accès WiFi
+2. Configuration WiFi → Auto-enregistrement Firebase
+3. Envoi automatique des mesures toutes les 30 secondes
 
 Connexions:
 === ÉCRAN OLED SSD1309 (SPI) ===
@@ -20,7 +24,7 @@ Pin 12 (GPIO 9) → RX Pico (TX capteur)
 Pin 11 (GPIO 8) → TX Pico (RX capteur)
 """
 
-from machine import Pin, SPI, UART, reset
+from machine import Pin, SPI, UART, reset, unique_id
 import network
 import socket
 import time
@@ -28,19 +32,27 @@ import json
 import urequests
 import struct
 import os
+import ubinascii
 from aircarto_mascot import AirCartoMascot, draw_main_display_with_mascot
 
-print("🌱 === My Pico v2.0 - WiFi Ready === 🌱")
+print("🌱 === My Pico v3.0 - Firebase Ready === 🌱")
 
 # =====================================================
 # CONFIGURATION
 # =====================================================
-WIFI_CONFIG_FILE = "wifi_config.json"
-SERVER_URL = "http://192.168.1.42:5000/api/co2"  # 🔧 IP du Raspberry Pi!
-AP_SSID = "My-Pico"
+DEVICE_ID = "picoAZ12"  # ID unique du Pico (à personnaliser par device)
+FIREBASE_PROJECT_ID = "my-pico-cf271"
+FIREBASE_API_KEY = "AIzaSyAl_i1UGJ1tVTEAkn8xhSbwe_iKk0eYryk"
+FIREBASE_BASE_URL = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
+
+WEBSITE_URL = "https://mypico.noagiannone.fr"
+CONFIG_FILE = "pico_config.json"
+FIRST_BOOT_FLAG = "first_boot.flag"
+
+AP_SSID = f"My-Pico-{DEVICE_ID}"
 AP_PASSWORD = "mypico123"
 MEASUREMENT_INTERVAL = 30  # secondes
-RETRY_INTERVAL = 5  # secondes entre tentatives de connexion
+RETRY_INTERVAL = 5  # secondes entre tentatives
 
 # =====================================================
 # CONFIGURATION MATÉRIEL
@@ -60,95 +72,384 @@ uart = UART(1, baudrate=9600, tx=Pin(8), rx=Pin(9))
 oled = None
 wifi_connected = False
 ap_mode = False
-mascot = None  # Nouvelle variable pour la mascotte
+mascot = None
+device_registered = False
+startup_time = time.time()
+
+# =====================================================
+# UTILITAIRES SYSTÈME
+# =====================================================
+
+def is_first_boot():
+    """Vérifie si c'est le premier démarrage"""
+    try:
+        with open(FIRST_BOOT_FLAG, 'r'):
+            return False
+    except:
+        return True
+
+def mark_boot_complete():
+    """Marque le premier boot comme terminé"""
+    with open(FIRST_BOOT_FLAG, 'w') as f:
+        f.write(str(time.time()))
+
+def load_config():
+    """Charge la configuration sauvegardée"""
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_config(config):
+    """Sauvegarde la configuration"""
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(config, f)
+
+def get_device_info():
+    """Récupère les informations du device"""
+    mac = ubinascii.hexlify(network.WLAN().config('mac')).decode()
+    
+    wlan = network.WLAN(network.STA_IF)
+    ip = "0.0.0.0"
+    rssi = -100
+    ssid = ""
+    
+    if wlan.isconnected():
+        ip = wlan.ifconfig()[0]
+        rssi = wlan.status('rssi')
+        ssid = wlan.config('essid')
+    
+    return {
+        "deviceId": DEVICE_ID,
+        "macAddress": mac,
+        "ipAddress": ip,
+        "wifiSSID": ssid,
+        "signalStrength": rssi,
+        "firmwareVersion": "3.0.0",
+        "uptime": int(time.time() - startup_time),
+        "freeMemory": None  # À implémenter si nécessaire
+    }
+
+# =====================================================
+# FIREBASE INTEGRATION
+# =====================================================
+
+def firebase_request(method, path, data=None):
+    """Effectue une requête vers Firebase"""
+    url = f"{FIREBASE_BASE_URL}/{path}"
+    headers = {"Content-Type": "application/json"}
+    
+    try:
+        if method == "POST":
+            response = urequests.post(url, json=data, headers=headers)
+        elif method == "GET":
+            response = urequests.get(url, headers=headers)
+        elif method == "PATCH":
+            response = urequests.patch(url, json=data, headers=headers)
+        else:
+            return None
+        
+        if response.status_code in [200, 201]:
+            result = response.json()
+            response.close()
+            return result
+        else:
+            print(f"❌ Firebase error {response.status_code}: {response.text}")
+            response.close()
+            return None
+            
+    except Exception as e:
+        print(f"❌ Firebase request error: {e}")
+        return None
+
+def get_geolocation():
+    """Récupère la géolocalisation via IP"""
+    try:
+        # Service gratuit de géolocalisation IP
+        response = urequests.get("http://ip-api.com/json/")
+        if response.status_code == 200:
+            data = response.json()
+            response.close()
+            
+            if data.get('status') == 'success':
+                return {
+                    "lat": data.get('lat'),
+                    "lng": data.get('lon'),
+                    "address": f"{data.get('city', '')}, {data.get('country', '')}"
+                }
+        else:
+            response.close()
+    except Exception as e:
+        print(f"❌ Geolocation error: {e}")
+    
+    # Valeurs par défaut (Marseille)
+    return {
+        "lat": 43.2965,
+        "lng": 5.3698,
+        "address": "Marseille, France"
+    }
+
+def register_device_firebase():
+    """Enregistre le device dans Firebase"""
+    global device_registered
+    
+    print("📝 Enregistrement Firebase...")
+    if mascot:
+        mascot.draw_config_screen("firebase_register", "Enregistrement", "Firebase...")
+    else:
+        display_status("Enregistrement", "Firebase...")
+    
+    device_info = get_device_info()
+    location = get_geolocation()
+    
+    # Données du device
+    device_data = {
+        "fields": {
+            "info": {
+                "mapValue": {
+                    "fields": {
+                        "deviceId": {"stringValue": DEVICE_ID},
+                        "name": {"stringValue": f"My Pico {DEVICE_ID}"},
+                        "type": {"stringValue": "pico-co2"},
+                        "owner": {"nullValue": None},
+                        "location": {
+                            "mapValue": {
+                                "fields": {
+                                    "lat": {"doubleValue": location["lat"]},
+                                    "lng": {"doubleValue": location["lng"]},
+                                    "address": {"stringValue": location["address"]},
+                                    "indoor": {"booleanValue": True}
+                                }
+                            }
+                        },
+                        "isPublic": {"booleanValue": False},
+                        "isRegistered": {"booleanValue": True},
+                        "isConfigured": {"booleanValue": False},
+                        "registeredAt": {"timestampValue": time_to_iso()},
+                        "lastSeen": {"timestampValue": time_to_iso()},
+                        "status": {"stringValue": "online"}
+                    }
+                }
+            },
+            "settings": {
+                "mapValue": {
+                    "fields": {
+                        "measurementInterval": {"integerValue": str(MEASUREMENT_INTERVAL)},
+                        "sharePublicly": {"booleanValue": False},
+                        "alertThresholds": {
+                            "mapValue": {
+                                "fields": {
+                                    "warning": {"integerValue": "1000"},
+                                    "danger": {"integerValue": "1500"}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "network": {
+                "mapValue": {
+                    "fields": {
+                        "macAddress": {"stringValue": device_info["macAddress"]},
+                        "ipAddress": {"stringValue": device_info["ipAddress"]},
+                        "wifiSSID": {"stringValue": device_info["wifiSSID"]},
+                        "signalStrength": {"integerValue": str(device_info["signalStrength"])}
+                    }
+                }
+            },
+            "calibration": {
+                "mapValue": {
+                    "fields": {
+                        "lastCalibration": {"nullValue": None},
+                        "calibrationOffset": {"integerValue": "0"},
+                        "calibrationNote": {"stringValue": ""}
+                    }
+                }
+            }
+        }
+    }
+    
+    # Créer le document device
+    result = firebase_request("POST", f"devices?documentId={DEVICE_ID}", device_data)
+    
+    if result:
+        print("✅ Device enregistré dans Firebase!")
+        device_registered = True
+        
+        # Sauvegarder l'état d'enregistrement
+        config = load_config()
+        config['registered'] = True
+        config['registered_at'] = time.time()
+        save_config(config)
+        
+        if mascot:
+            mascot.draw_config_screen("firebase_success", "Enregistré!", "Device configuré")
+            time.sleep(2)
+        else:
+            display_status("Enregistré!", "Device configuré")
+            time.sleep(2)
+        
+        return True
+    else:
+        print("❌ Échec enregistrement Firebase")
+        if mascot:
+            mascot.draw_config_screen("firebase_error", "Erreur Firebase", "Réessayer...")
+            time.sleep(2)
+        else:
+            display_status("Erreur Firebase", "Réessayer...")
+            time.sleep(2)
+        
+        return False
+
+def send_measurement_firebase(co2_ppm, status):
+    """Envoie une mesure vers Firebase"""
+    if not device_registered:
+        return False
+    
+    device_info = get_device_info()
+    
+    measurement_data = {
+        "fields": {
+            "deviceId": {"stringValue": DEVICE_ID},
+            "timestamp": {"timestampValue": time_to_iso()},
+            "co2_ppm": {"integerValue": str(co2_ppm)},
+            "air_quality": {"stringValue": status.lower()},
+            "isPublic": {"booleanValue": False},  # Par défaut non public
+            "metadata": {
+                "mapValue": {
+                    "fields": {
+                        "firmware_version": {"stringValue": device_info["firmwareVersion"]},
+                        "uptime_seconds": {"integerValue": str(device_info["uptime"])},
+                        "wifi_rssi": {"integerValue": str(device_info["signalStrength"])}
+                    }
+                }
+            }
+        }
+    }
+    
+    # Ajouter dans la sous-collection measurements
+    result = firebase_request("POST", f"measurements/{DEVICE_ID}/data", measurement_data)
+    
+    if result:
+        print(f"✅ Mesure envoyée: {co2_ppm} ppm")
+        
+        # Mettre à jour le lastSeen du device
+        update_device_status()
+        return True
+    else:
+        print("❌ Échec envoi mesure")
+        return False
+
+def update_device_status():
+    """Met à jour le statut du device (lastSeen, status)"""
+    update_data = {
+        "fields": {
+            "info": {
+                "mapValue": {
+                    "fields": {
+                        "lastSeen": {"timestampValue": time_to_iso()},
+                        "status": {"stringValue": "online"}
+                    }
+                }
+            }
+        }
+    }
+    
+    firebase_request("PATCH", f"devices/{DEVICE_ID}?updateMask.fieldPaths=info.lastSeen&updateMask.fieldPaths=info.status", update_data)
+
+def time_to_iso():
+    """Convertit le timestamp actuel en format ISO pour Firebase"""
+    t = time.localtime()
+    return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
 
 # =====================================================
 # GESTION WIFI & CONFIGURATION
 # =====================================================
 
-def load_wifi_config():
-    """Charge la configuration WiFi depuis le fichier"""
-    try:
-        with open(WIFI_CONFIG_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return None
-
-def save_wifi_config(ssid, password):
-    """Sauvegarde la configuration WiFi"""
-    config = {"ssid": ssid, "password": password}
-    with open(WIFI_CONFIG_FILE, 'w') as f:
-        json.dump(config, f)
-    print(f"✅ WiFi sauvegardé: {ssid}")
-
 def connect_wifi(ssid=None, password=None):
     """Tente de se connecter au WiFi"""
     global wifi_connected
     
-    # Si SSID/password fournis directement, les utiliser
-    if ssid and password:
-        config = {"ssid": ssid, "password": password}
-    else:
-        # Sinon charger depuis le fichier
-        config = load_wifi_config()
-        if not config:
-            print("❌ Pas de configuration WiFi")
+    # Charger config si pas de paramètres fournis
+    if not ssid or not password:
+        config = load_config()
+        if not config.get('wifi'):
             return False
+        ssid = config['wifi']['ssid']
+        password = config['wifi']['password']
     
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     
-    print(f"🔌 Connexion à {config['ssid']}...")
+    print(f"🔌 Connexion à {ssid}...")
     if mascot:
-        mascot.draw_config_screen("wifi_connect", "Connexion WiFi", config['ssid'])
+        mascot.draw_config_screen("wifi_connect", "Connexion WiFi", ssid)
     else:
-        display_status("Connexion WiFi", config['ssid'])
+        display_status("Connexion WiFi", ssid)
     
-    wlan.connect(config['ssid'], config['password'])
+    wlan.connect(ssid, password)
     
     # Attendre la connexion (max 15s)
     timeout = 15
     while timeout > 0 and not wlan.isconnected():
         time.sleep(1)
         timeout -= 1
-        print(f"⏳ Tentative... {timeout}s")
-        if timeout % 3 == 0:  # Mise à jour écran toutes les 3s
+        
+        if timeout % 3 == 0:  # Mise à jour écran
             if mascot:
-                mascot.draw_config_screen("wifi_connect", "Connexion WiFi", f"{config['ssid']} ({timeout}s)")
+                mascot.draw_config_screen("wifi_connect", "Connexion WiFi", f"{ssid} ({timeout}s)")
             else:
-                display_status("Connexion WiFi", f"{config['ssid']} ({timeout}s)")
+                display_status("Connexion WiFi", f"{ssid} ({timeout}s)")
     
     if wlan.isconnected():
         ip = wlan.ifconfig()[0]
         print(f"✅ WiFi connecté! IP: {ip}")
+        wifi_connected = True
+        
+        # Sauvegarder config WiFi
+        config = load_config()
+        config['wifi'] = {'ssid': ssid, 'password': password}
+        save_config(config)
+        
         if mascot:
             mascot.draw_config_screen("wifi_success", "WiFi connecté!", ip)
-            time.sleep(2)  # Montrer la joie du chat
+            time.sleep(2)
         else:
             display_status("WiFi connecté", ip)
-        wifi_connected = True
+            time.sleep(2)
+        
         return True
     else:
         print("❌ Connexion WiFi échouée")
+        wifi_connected = False
+        
         if mascot:
             mascot.draw_config_screen("wifi_fail", "WiFi échoué", "Vérifiez config")
-            time.sleep(2)  # Montrer la tristesse du chat
+            time.sleep(2)
         else:
             display_status("WiFi échoué", "Vérifiez config")
-        wifi_connected = False
+            time.sleep(2)
+        
         return False
 
-def start_access_point():
-    """Démarre le point d'accès pour configuration"""
+def start_configuration_mode():
+    """Démarre le mode configuration avec point d'accès"""
     global ap_mode
     
-    print("📡 Démarrage mode configuration...")
+    print("📡 Mode configuration - Premier boot")
+    
+    # Affichage des instructions de configuration
     if mascot:
-        # Afficher les instructions de connexion (plus longtemps)
-        mascot.draw_setup_guide("connect_ap")
-        time.sleep(8)  # Plus de temps pour lire
+        mascot.draw_config_screen("initial_setup", "Configuration", "Première utilisation")
+        time.sleep(3)
+        mascot.draw_config_screen("connect_instructions", "Connectez-vous à:", WEBSITE_URL)
+        time.sleep(5)
     else:
-        display_status("Mode Config", "My Pico Setup")
+        display_status("Configuration", "Premier boot")
+        time.sleep(2)
+        display_status("Connectez-vous à:", WEBSITE_URL)
+        time.sleep(3)
     
     # Créer point d'accès
     ap = network.WLAN(network.AP_IF)
@@ -158,219 +459,168 @@ def start_access_point():
     while not ap.active():
         time.sleep(1)
     
+    ip = ap.ifconfig()[0]
     print(f"✅ Point d'accès créé: {AP_SSID}")
     print(f"🔑 Mot de passe: {AP_PASSWORD}")
-    print(f"🌐 IP: {ap.ifconfig()[0]}")
+    print(f"🌐 IP: {ip}")
     
     ap_mode = True
-    return ap
-
-def wait_for_connection_and_show_qr(ap, mascot):
-    """Attendre qu'un client se connecte, puis afficher le QR code"""
-    print("🔍 Attente de connexion client...")
     
+    # Afficher les infos de connexion
     if mascot:
-        # Afficher "En attente de connexion"
-        start_time = time.time()
-        last_station_count = 0
-        
-        while time.time() - start_time < 60:  # Timeout 60s
-            mascot.draw_setup_guide("waiting_connection")
-            time.sleep(1)
-            
-            # Vérifier s'il y a des clients connectés (méthode plus fiable)
-            try:
-                stations = ap.status('stations')
-                current_count = len(stations) if stations else 0
-                
-                if current_count > last_station_count:
-                    print(f"✅ Client connecté! ({current_count} stations)")
-                    
-                    # Attendre un peu pour stabiliser la connexion
-                    time.sleep(2)
-                    
-                    # Maintenant afficher le QR code
-                    ip = ap.ifconfig()[0]
-                    mascot.draw_setup_guide("show_qr", ip)
-                    print(f"📱 QR code affiché pour http://{ip}")
-                    return True
-                
-                last_station_count = current_count
-                
-            except Exception as e:
-                print(f"⚠️ Erreur vérification stations: {e}")
-        
-        # Timeout atteint - afficher le QR quand même
-        print("⏰ Timeout - affichage QR code quand même")
-        ip = ap.ifconfig()[0]
-        mascot.draw_setup_guide("show_qr", ip)
-        return True
+        mascot.draw_config_screen("show_ap_info", f"WiFi: {AP_SSID}", f"Page: {ip}")
+    else:
+        display_status(f"WiFi: {AP_SSID}", f"Page: {ip}")
     
-    return True
+    return ap, ip
 
-def create_captive_portal():
-    """Crée le serveur web pour la configuration"""
+def create_config_portal(ap_ip):
+    """Crée le portail de configuration WiFi"""
     
-    html_page = """
+    config_page = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>My Pico - Configuration WiFi</title>
+        <title>My Pico {DEVICE_ID} - Configuration</title>
         <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 420px; margin: 20px auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-            .container { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-            h1 { color: #2d3748; text-align: center; margin-bottom: 30px; font-weight: 600; }
-            .logo { text-align: center; font-size: 54px; margin-bottom: 15px; }
-            .subtitle { text-align: center; color: #718096; margin-bottom: 30px; }
-            input, select { width: 100%; padding: 14px; margin: 12px 0; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all 0.3s; }
-            input:focus, select:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-            button { width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-            button:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3); }
-            .guide { background: #f7fafc; padding: 20px; border-radius: 12px; margin: 25px 0; border-left: 4px solid #667eea; }
-            .step { margin: 12px 0; color: #4a5568; display: flex; align-items: center; }
-            .step-number { background: #667eea; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; font-weight: bold; }
-            .success { background: #f0fff4; border-left-color: #48bb78; }
-            label { font-weight: 600; color: #2d3748; margin-bottom: 5px; display: block; }
+            body {{ font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 400px; margin: 20px auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }}
+            .container {{ background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }}
+            h1 {{ color: #2d3748; text-align: center; margin-bottom: 25px; }}
+            .device-id {{ background: #f7fafc; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 25px; border: 2px solid #e2e8f0; }}
+            .device-id strong {{ color: #667eea; font-size: 18px; }}
+            input, select {{ width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }}
+            input:focus, select:focus {{ border-color: #667eea; outline: none; }}
+            button {{ width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }}
+            button:hover {{ transform: translateY(-2px); }}
+            .instructions {{ background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 20px 0; }}
+            .step {{ margin: 8px 0; display: flex; align-items: center; }}
+            .step-num {{ background: #667eea; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="logo">🚀</div>
-            <h1>My Pico</h1>
-            <div class="subtitle">Configuration WiFi</div>
+            <h1>🌱 My Pico Configuration</h1>
             
-            <div class="guide">
-                <strong>🎯 Guide rapide:</strong>
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div>Sélectionnez votre réseau WiFi</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div>Entrez le mot de passe</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div>Cliquez sur "Configurer"</div>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <div>My Pico se connectera automatiquement!</div>
-                </div>
+            <div class="device-id">
+                <strong>Device ID: {DEVICE_ID}</strong><br>
+                <small>Notez cet ID pour l'ajout sur {WEBSITE_URL}</small>
+            </div>
+            
+            <div class="instructions">
+                <strong>📋 Instructions:</strong>
+                <div class="step"><span class="step-num">1</span>Configurez le WiFi ci-dessous</div>
+                <div class="step"><span class="step-num">2</span>Allez sur {WEBSITE_URL}</div>
+                <div class="step"><span class="step-num">3</span>Ajoutez le device avec l'ID: {DEVICE_ID}</div>
             </div>
             
             <form action="/configure" method="POST">
-                <label for="ssid">🔌 Réseau WiFi:</label>
-                <select name="ssid" id="ssid" required>
-                    <option value="">-- Choisissez votre réseau --</option>
+                <label>🔌 Réseau WiFi:</label>
+                <select name="ssid" required>
+                    <option value="">-- Sélectionnez --</option>
                     %NETWORKS%
                 </select>
                 
-                <label for="password">🔑 Mot de passe WiFi:</label>
-                <input type="password" name="password" id="password" placeholder="Entrez le mot de passe" required>
+                <label>🔑 Mot de passe:</label>
+                <input type="password" name="password" placeholder="Mot de passe WiFi" required>
                 
-                <button type="submit">🚀 Configurer et connecter</button>
+                <button type="submit">🚀 Configurer et démarrer</button>
             </form>
         </div>
         
         <script>
-            // Auto-refresh networks every 15s
-            setTimeout(() => location.reload(), 15000);
-            
-            // Animation du bouton
-            document.querySelector('button').addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-3px)';
-            });
-            document.querySelector('button').addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(-2px)';
-            });
+            setTimeout(() => location.reload(), 20000); // Auto-refresh
         </script>
     </body>
     </html>
     """
     
-    success_page = """
+    success_page = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>AirCarto - Configuré!</title>
+        <title>Configuration réussie!</title>
         <style>
-            body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f8ff; text-align: center; }
-            .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            h1 { color: #4CAF50; }
-            .success { font-size: 64px; margin: 20px 0; }
+            body {{ font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f8ff; text-align: center; }}
+            .container {{ background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+            h1 {{ color: #4CAF50; }}
+            .success {{ font-size: 64px; margin: 20px 0; }}
+            .redirect {{ background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 20px 0; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="success">✅</div>
             <h1>Configuration réussie!</h1>
-            <p><strong>AirCarto se connecte à votre WiFi...</strong></p>
-            <p>Votre capteur va maintenant fonctionner en mode normal et commencer les mesures CO2.</p>
-            <p><em>Vous pouvez fermer cette page et vous déconnecter du réseau AirCarto-Setup.</em></p>
+            <p><strong>My Pico {DEVICE_ID} se connecte maintenant...</strong></p>
+            
+            <div class="redirect">
+                <p>🌐 <strong>Étape suivante:</strong></p>
+                <p>Allez sur <a href="{WEBSITE_URL}/config/{DEVICE_ID}" target="_blank">{WEBSITE_URL}</a></p>
+                <p>pour ajouter votre Pico à votre compte</p>
+            </div>
+            
+            <p><em>Vous pouvez fermer cette page.</em></p>
         </div>
+        
         <script>
-            setTimeout(() => window.close(), 8000);
+            // Redirection automatique après 8 secondes
+            setTimeout(() => {{
+                window.location.href = "{WEBSITE_URL}/config/{DEVICE_ID}";
+            }}, 8000);
         </script>
     </body>
     </html>
     """
     
     def scan_networks():
-        """Scanne les réseaux WiFi disponibles"""
         try:
             wlan = network.WLAN(network.STA_IF)
             wlan.active(True)
             networks = wlan.scan()
             
-            network_options = ""
-            seen_ssids = set()
+            options = ""
+            seen = set()
             
             for net in networks:
                 ssid = net[0].decode('utf-8')
-                if ssid and ssid not in seen_ssids:
-                    signal_strength = net[3]
+                if ssid and ssid not in seen:
+                    signal = net[3]
                     security = "🔒" if net[4] > 0 else "🔓"
-                    network_options += f'<option value="{ssid}">{security} {ssid} ({signal_strength}dBm)</option>\n'
-                    seen_ssids.add(ssid)
+                    options += f'<option value="{ssid}">{security} {ssid} ({signal}dBm)</option>\n'
+                    seen.add(ssid)
             
-            return network_options
-        except Exception as e:
-            print(f"❌ Erreur scan WiFi: {e}")
-            return '<option value="">Erreur scan réseaux</option>'
+            return options
+        except:
+            return '<option value="">Erreur scan</option>'
     
-    # Créer serveur web
+    # Serveur web
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(('0.0.0.0', 80))
     s.listen(5)
     
-    print("🌐 Serveur web démarré sur http://192.168.4.1")
+    print(f"🌐 Serveur config: http://{ap_ip}")
     
     while ap_mode:
-        conn = None  # Initialiser conn à None
+        conn = None
         try:
             conn, addr = s.accept()
             request = conn.recv(1024).decode('utf-8')
             
-            print(f"📨 Requête de {addr[0]}")
-            
             if "POST /configure" in request:
-                # Traitement de la configuration
-                lines = request.split('\n')
-                data = lines[-1]  # Dernière ligne contient les données POST
-                
+                # Traitement configuration
+                data_line = request.split('\n')[-1]
                 params = {}
-                for param in data.split('&'):
+                
+                for param in data_line.split('&'):
                     if '=' in param:
                         key, value = param.split('=', 1)
-                        # Décoder les caractères URL
                         key = key.replace('%40', '@').replace('+', ' ')
-                        value = value.replace('%40', '@').replace('+', ' ')
+                        value = value.replace('%40', '@').replace('+', ' ').replace('%21', '!')
                         params[key] = value
                 
                 if 'ssid' in params and 'password' in params:
@@ -379,49 +629,39 @@ def create_captive_portal():
                     
                     print(f"💾 Configuration reçue: {ssid}")
                     
-                    # Réponse de succès d'abord
+                    # Réponse de succès
                     response = f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{success_page}"
                     conn.send(response.encode())
                     conn.close()
-                    conn = None  # Marquer comme fermé
+                    conn = None
                     
-                    # Sauvegarder la config
-                    save_wifi_config(ssid, password)
-                    
-                    # Arrêter le serveur web et le point d'accès
-                    print("🔄 Arrêt du mode configuration...")
+                    # Fermer serveur et AP
                     try:
                         s.close()
                     except:
                         pass
                     
-                    # Arrêter le point d'accès
+                    # Sauvegarder config et tenter connexion
+                    config = load_config()
+                    config['wifi'] = {'ssid': ssid, 'password': password}
+                    save_config(config)
+                    
                     ap = network.WLAN(network.AP_IF)
                     ap.active(False)
+                    ap_mode = False
                     
-                    # Attendre un peu
                     time.sleep(2)
                     
-                    # Tenter la connexion au nouveau WiFi
-                    print("🔌 Connexion au nouveau WiFi...")
+                    # Tenter la connexion
                     if connect_wifi(ssid, password):
-                        print("✅ Configuration terminée avec succès!")
-                        return True  # Succès
+                        return True
                     else:
-                        print("❌ Échec de connexion, retour en mode configuration...")
-                        # Redémarrer le point d'accès si échec
-                        time.sleep(3)
-                        start_access_point()
-                        return create_captive_portal()  # Récursif
-                else:
-                    # Paramètres manquants
-                    error_response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n<h1>Erreur: Paramètres manquants</h1>"
-                    conn.send(error_response.encode())
+                        return False
                 
             else:
                 # Page principale
                 networks = scan_networks()
-                page = html_page.replace('%NETWORKS%', networks)
+                page = config_page.replace('%NETWORKS%', networks)
                 
                 response = f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{page}"
                 conn.send(response.encode())
@@ -438,17 +678,15 @@ def create_captive_portal():
                 except:
                     pass
         
-        # Vérifier si on doit sortir de la boucle
         if not ap_mode:
             break
     
-    # Fermer le serveur si on arrive ici
     try:
         s.close()
     except:
         pass
     
-    return False  # Échec par défaut
+    return False
 
 # =====================================================
 # FONCTIONS CAPTEUR CO2
@@ -496,51 +734,6 @@ def get_air_quality_status(co2_ppm):
         return "DANGER", "🚨"
 
 # =====================================================
-# ENVOI DONNÉES SERVEUR
-# =====================================================
-
-def send_to_server(co2_ppm, status):
-    """Envoie les données au serveur"""
-    if not wifi_connected:
-        return False
-    
-    try:
-        data = {
-            "device_id": "aircarto_001",  # ID unique du dispositif
-            "timestamp": time.time(),
-            "co2_ppm": co2_ppm,
-            "air_quality": status,
-            "location": "default"  # À personnaliser
-        }
-        
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "AirCarto/2.0"
-        }
-        
-        print(f"📡 Envoi au serveur: {co2_ppm} ppm")
-        
-        # ENVOI RÉEL activé !
-        response = urequests.post(SERVER_URL, json=data, headers=headers)
-        
-        if response.status_code == 200:
-            print("✅ Données envoyées!")
-            response.close()  # Libérer la mémoire
-            return True
-        else:
-            print(f"❌ Erreur serveur: {response.status_code}")
-            response.close()
-            return False
-        
-        # # Simulation désactivée
-        # print("✅ Données envoyées! (simulation)")
-        # return True
-        
-    except Exception as e:
-        print(f"❌ Erreur envoi: {e}")
-        return False
-
-# =====================================================
 # FONCTIONS AFFICHAGE
 # =====================================================
 
@@ -548,14 +741,14 @@ def display_status(title, subtitle=""):
     """Affiche un statut sur l'écran"""
     if oled:
         oled.fill(0)
-        oled.text("My Pico v2.0", 10, 0)
+        oled.text("My Pico v3.0", 5, 0)
         oled.hline(0, 10, 128, 1)
-        oled.text(title, 10, 20)
+        oled.text(title, 5, 20)
         if subtitle:
             oled.text(subtitle, 5, 35)
         oled.show()
 
-def draw_main_display(co2_ppm, status, emoji, wifi_status, server_status):
+def draw_main_display(co2_ppm, status, emoji, wifi_status, firebase_status):
     """Affiche l'interface principale"""
     if not oled:
         return
@@ -563,20 +756,20 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, server_status):
     oled.fill(0)
     
     # En-tête avec statuts
-    oled.text("My Pico", 35, 0)
+    oled.text("My Pico", 30, 0)
     
     # Statuts connexion
     wifi_icon = "📶" if wifi_connected else "❌"
-    server_icon = "☁️" if server_status else "📡"
-    oled.text(f"{wifi_icon} {server_icon}", 90, 0)
+    firebase_icon = "☁️" if firebase_status else "📡"
+    oled.text(f"{wifi_icon}{firebase_icon}", 85, 0)
     
     oled.hline(0, 10, 128, 1)
     
     # CO2 principal
     if co2_ppm is not None:
         co2_text = f"{co2_ppm} ppm"
-        oled.text(co2_text, 20, 15)
-        oled.text(f"Air: {status}", 10, 30)
+        oled.text(co2_text, 15, 20)
+        oled.text(f"Air: {status}", 5, 35)
         
         # Barre de niveau
         bar_width = min(120, int((co2_ppm / 2000) * 120))
@@ -584,11 +777,11 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, server_status):
         oled.rect(4, 45, 120, 8, 1)
         
     else:
-        oled.text("CAPTEUR", 30, 25)
-        oled.text("ERREUR", 35, 40)
+        oled.text("CAPTEUR", 25, 25)
+        oled.text("ERREUR", 30, 40)
     
-    # Pied de page
-    oled.text(f"Up: {time.ticks_ms()//1000}s", 0, 56)
+    # Device ID en bas
+    oled.text(f"ID: {DEVICE_ID}", 0, 56)
     
     oled.show()
 
@@ -597,91 +790,92 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, server_status):
 # =====================================================
 
 def main():
-    global oled, wifi_connected, ap_mode, mascot
+    global oled, wifi_connected, ap_mode, mascot, device_registered
     
     try:
         # Initialiser l'écran OLED
         print("📺 Initialisation écran...")
         from ssd1306 import SSD1306_SPI
         oled = SSD1306_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
-        print("✅ Écran prêt!")
+        print("✅ Écran OK!")
         
         # Initialiser la mascotte
-        print("🐱 Initialisation mascotte...")
         try:
             mascot = AirCartoMascot(oled)
-            print("✅ Mascotte prête!")
+            print("✅ Mascotte OK!")
             use_mascot = True
             
-            # Animation de démarrage avec mascotte
-            print("🎬 Animation de démarrage...")
+            # Animation de démarrage
             frame = 0
             while mascot.draw_startup_animation(frame):
                 frame += 1
-                time.sleep(0.1)  # 10 FPS
+                time.sleep(0.1)
                 
         except ImportError:
-            print("⚠️ Mascotte non disponible, mode classique")
+            print("⚠️ Mascotte indisponible")
             use_mascot = False
-            display_status("Demarrage...", "My Pico v2.0")
+            display_status("Démarrage...", f"My Pico {DEVICE_ID}")
             time.sleep(2)
         
-        # Tentative de connexion WiFi
-        print("🔌 Tentative connexion WiFi...")
-        wifi_configured = False
+        # Vérifier si premier boot
+        first_boot = is_first_boot()
+        config = load_config()
         
-        if not connect_wifi():
-            print("📡 Démarrage mode configuration...")
-            ap_mode = True  # S'assurer que ap_mode est défini
-            ap = start_access_point()
+        print(f"🔍 Premier boot: {first_boot}")
+        print(f"📁 Config existante: {bool(config.get('wifi'))}")
+        
+        if first_boot or not config.get('wifi'):
+            print("🆕 Configuration initiale requise")
             
-            # Attendre connexion et afficher QR quand nécessaire
-            connection_detected = wait_for_connection_and_show_qr(ap, mascot if use_mascot else None)
-            
-            if connection_detected:
-                wifi_configured = create_captive_portal()
-            else:
-                wifi_configured = False
-                
-            ap_mode = False  # Réinitialiser après le captive portal
+            # Mode configuration
+            ap, ip = start_configuration_mode()
+            wifi_configured = create_config_portal(ip)
             
             if not wifi_configured:
-                print("❌ Configuration WiFi annulée")
+                print("❌ Configuration annulée")
+                return
+                
+            # Marquer comme configuré
+            mark_boot_complete()
+            
+        else:
+            print("🔌 Tentative connexion WiFi existant...")
+            if not connect_wifi():
+                print("❌ Échec connexion, mode reconfig")
+                ap, ip = start_configuration_mode()
+                wifi_configured = create_config_portal(ip)
+                
+                if not wifi_configured:
+                    return
+        
+        # Vérifier si device déjà enregistré
+        if not config.get('registered'):
+            print("📝 Première connexion - Enregistrement Firebase")
+            if not register_device_firebase():
+                print("❌ Échec enregistrement Firebase")
                 return
         else:
-            wifi_configured = True
-            # Animation de connexion réussie
-            if use_mascot and mascot:
-                mascot.animate_reaction("wifi_connect")
+            device_registered = True
+            print("✅ Device déjà enregistré")
         
-        # Si on arrive ici, le WiFi est configuré
-        if wifi_configured:
-            print("✅ WiFi configuré, démarrage du système...")
-            display_status("WiFi OK", "Demarrage systeme")
-            time.sleep(2)
-        
-        # Préchauffage capteur avec animation
+        # Préchauffage capteur
         print("🌡️ Préchauffage capteur...")
         if use_mascot and mascot:
-            # Animation de préchauffage avec chat qui dort
+            # Animation de préchauffage
             frame = 0
             while mascot.draw_sleeping_animation(frame):
                 frame += 1
-                time.sleep(0.25)  # 4 FPS pour animation plus lente
+                time.sleep(0.25)
+            mascot.draw_waking_animation()
         else:
-            # Mode classique
             for i in range(6):
-                display_status("Prechauffage", f"{(6-i)*5}s restantes")
+                display_status("Préchauffage", f"{(6-i)*5}s")
                 time.sleep(5)
         
-        # Animation de réveil
-        if use_mascot and mascot:
-            mascot.draw_waking_animation()
+        print("✅ Système prêt pour les mesures!")
         
-        print("✅ Système prêt!")
-        
-        # Boucle principale
-        last_server_success = True
+        # Boucle principale des mesures
+        last_firebase_success = True
         last_co2_level = None
         
         while True:
@@ -694,6 +888,7 @@ def main():
                 wifi_connected = False
                 if use_mascot and mascot:
                     mascot.animate_reaction("wifi_error")
+                
                 # Tenter reconnexion
                 if not connect_wifi():
                     time.sleep(RETRY_INTERVAL)
@@ -703,7 +898,7 @@ def main():
             co2_ppm = read_co2()
             status, emoji = get_air_quality_status(co2_ppm)
             
-            # Déclencher animations selon les changements
+            # Animations selon les changements
             if use_mascot and mascot and co2_ppm is not None:
                 if last_co2_level is None:
                     last_co2_level = co2_ppm
@@ -714,24 +909,24 @@ def main():
             if co2_ppm is not None:
                 print(f"CO2: {co2_ppm} ppm - {status}")
                 
-                # Envoi au serveur
-                server_success = send_to_server(co2_ppm, status)
-                last_server_success = server_success
+                # Envoi Firebase
+                firebase_success = send_measurement_firebase(co2_ppm, status)
+                last_firebase_success = firebase_success
             else:
                 print("❌ Erreur lecture CO2")
-                last_server_success = False
+                last_firebase_success = False
             
-            # Affichage avec ou sans mascotte
+            # Affichage
             if use_mascot and mascot:
-                draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_connected, last_server_success)
+                draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_connected, last_firebase_success)
             else:
-                draw_main_display(co2_ppm, status, emoji, wifi_connected, last_server_success)
+                draw_main_display(co2_ppm, status, emoji, wifi_connected, last_firebase_success)
             
             # Attendre prochaine mesure
             time.sleep(MEASUREMENT_INTERVAL)
             
-    except ImportError:
-        print("❌ Bibliothèque ssd1306 manquante!")
+    except ImportError as e:
+        print(f"❌ Librairie manquante: {e}")
         
     except KeyboardInterrupt:
         print("\n🛑 Arrêt utilisateur")
@@ -739,7 +934,7 @@ def main():
     except Exception as e:
         print(f"❌ Erreur critique: {e}")
         import sys
-        sys.print_exception(e)  # Afficher la stack trace complète
+        sys.print_exception(e)
 
 if __name__ == "__main__":
     main() 

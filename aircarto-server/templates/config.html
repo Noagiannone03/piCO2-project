@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pico - Configuration en cours</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Design System moderne */
+            --primary: #007AFF;
+            --primary-light: #5AC8FA;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --info: #5AC8FA;
+            
+            /* Backgrounds */
+            --bg-primary: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --bg-surface: #F8F9FA;
+            --bg-hover: #F5F5F7;
+            --bg-accent: rgba(0, 122, 255, 0.08);
+            --bg-gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            
+            /* Textes */
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-tertiary: #6E6E73;
+            
+            /* Bordures et ombres */
+            --border-light: #E5E5E7;
+            --border-medium: #D1D1D6;
+            --shadow-soft: 0 2px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-large: 0 16px 40px rgba(0, 0, 0, 0.15);
+            
+            /* Rayons */
+            --radius-small: 8px;
+            --radius-medium: 12px;
+            --radius-large: 20px;
+            --radius-xl: 28px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 1rem 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-medium);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .config-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .config-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            box-shadow: var(--shadow-large);
+            border: 1px solid var(--border-light);
+            margin-bottom: 2rem;
+        }
+
+        .device-id-display {
+            background: var(--bg-gradient);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-large);
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .status-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .status-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .progress-bar {
+            background: var(--bg-surface);
+            border-radius: 50px;
+            height: 8px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: var(--bg-gradient);
+            height: 100%;
+            border-radius: 50px;
+            transition: width 0.3s ease;
+            animation: progressPulse 2s infinite;
+        }
+
+        @keyframes progressPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .steps-list {
+            text-align: left;
+            margin: 2rem 0;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--radius-medium);
+            transition: all 0.3s ease;
+        }
+
+        .step-item.completed {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--success);
+        }
+
+        .step-item.active {
+            background: var(--bg-accent);
+            color: var(--primary);
+        }
+
+        .step-item.pending {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+        }
+
+        .step-icon {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .step-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .help-section {
+            background: var(--bg-surface);
+            border-radius: var(--radius-large);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .help-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .help-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .help-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 1rem 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 0.25rem;
+            margin-left: 0.5rem;
+        }
+
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: loadingDot 1.4s infinite;
+        }
+
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes loadingDot {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .config-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .device-id-display {
+                font-size: 1.2rem;
+                padding: 1rem;
+            }
+            
+            .status-icon {
+                font-size: 3rem;
+            }
+            
+            .status-title {
+                font-size: 1.6rem;
+            }
+            
+            .status-description {
+                font-size: 1rem;
+            }
+            
+            .timer-display {
+                font-size: 1.5rem;
+            }
+            
+            .help-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.85rem;
+                min-width: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .config-card {
+                padding: 1.5rem 1rem;
+            }
+            
+            .status-title {
+                font-size: 1.4rem;
+            }
+            
+            .device-id-display {
+                font-size: 1rem;
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                🌱 My Pico
+            </a>
+            <div class="nav-actions">
+                <a href="/dashboard" class="btn btn-secondary">
+                    ← Retour au dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="config-container">
+            <div class="config-card">
+                <div id="deviceIdDisplay" class="device-id-display">
+                    Device ID: <span id="deviceId">Chargement...</span>
+                </div>
+
+                <div id="statusIcon" class="status-icon">🔍</div>
+                <h1 id="statusTitle" class="status-title">Recherche de votre Pico</h1>
+                <p id="statusDescription" class="status-description">
+                    Nous recherchons votre capteur dans la base de données. 
+                    Assurez-vous qu'il est connecté et configuré.
+                </p>
+
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 10%;"></div>
+                </div>
+
+                <div class="timer-display">
+                    <span id="timer">00:00</span>
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                </div>
+
+                <div class="steps-list">
+                    <div id="step1" class="step-item completed">
+                        <div class="step-icon">✅</div>
+                        <div class="step-text">Configuration WiFi terminée</div>
+                    </div>
+                    <div id="step2" class="step-item active">
+                        <div class="step-icon">🔄</div>
+                        <div class="step-text">Enregistrement du capteur en cours</div>
+                    </div>
+                    <div id="step3" class="step-item pending">
+                        <div class="step-icon">⏳</div>
+                        <div class="step-text">Première mesure en attente</div>
+                    </div>
+                    <div id="step4" class="step-item pending">
+                        <div class="step-icon">📊</div>
+                        <div class="step-text">Ajout à votre dashboard</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3 class="help-title">
+                    💡 Besoin d'aide ?
+                </h3>
+                <div class="help-content">
+                    Si votre Pico ne semble pas se connecter après 5 minutes, 
+                    vérifiez qu'il est bien allumé et connecté à votre réseau WiFi.
+                    L'écran du Pico doit afficher qu'il est connecté et en cours de fonctionnement.
+                </div>
+                <div class="help-actions">
+                    <button class="btn btn-primary" onclick="restartSearch()">
+                        🔄 Relancer la recherche
+                    </button>
+                    <a href="/setup" class="btn btn-outline">
+                        📖 Revoir le tutoriel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAl_i1UGJ1tVTEAkn8xhSbwe_iKk0eYryk",
+            authDomain: "my-pico-cf271.firebaseapp.com",
+            projectId: "my-pico-cf271",
+            storageBucket: "my-pico-cf271.firebasestorage.app",
+            messagingSenderId: "54768474260",
+            appId: "1:54768474260:web:fae83bd8869fc9e5a7fc81",
+            measurementId: "G-PC5DZ114DK"
+        };
+
+        // Initialiser Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Variables globales
+        let currentUser = null;
+        let deviceId = null;
+        let searchStartTime = null;
+        let deviceListener = null;
+        let timerInterval = null;
+        let progressInterval = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Récupérer l'ID du device depuis l'URL
+            deviceId = getDeviceIdFromURL();
+            
+            if (!deviceId) {
+                showError('ID du device manquant dans l\'URL');
+                return;
+            }
+
+            document.getElementById('deviceId').textContent = deviceId;
+            
+            // Vérifier l'authentification
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    startDeviceSearch();
+                } else {
+                    // Rediriger vers la connexion
+                    window.location.href = '/dashboard';
+                }
+            });
+        });
+
+        function getDeviceIdFromURL() {
+            const path = window.location.pathname;
+            const parts = path.split('/');
+            return parts[parts.length - 1];
+        }
+
+        function startDeviceSearch() {
+            searchStartTime = Date.now();
+            console.log(`🔍 Recherche du device: ${deviceId}`);
+            
+            // Démarrer le timer
+            startTimer();
+            startProgressBar();
+            
+            // Écouter les changements du document device
+            const deviceRef = doc(db, 'devices', deviceId);
+            
+            deviceListener = onSnapshot(deviceRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const deviceData = docSnapshot.data();
+                    console.log('📊 Device trouvé:', deviceData);
+                    
+                    updateStep(2, 'completed', '✅', 'Capteur enregistré avec succès');
+                    
+                    if (deviceData.info?.isRegistered) {
+                        // Device enregistré, vérifier s'il y a des mesures
+                        checkForMeasurements();
+                    }
+                } else {
+                    console.log('⏳ Device pas encore enregistré...');
+                }
+            }, (error) => {
+                console.error('❌ Erreur écoute device:', error);
+                showError('Erreur lors de la surveillance du device');
+            });
+
+            // Timeout après 5 minutes
+            setTimeout(() => {
+                if (deviceListener) {
+                    showTimeout();
+                }
+            }, 300000); // 5 minutes
+        }
+
+        async function checkForMeasurements() {
+            try {
+                updateStep(3, 'active', '🔄', 'Attente de la première mesure');
+                
+                // Écouter les mesures
+                const measurementsRef = collection(db, 'measurements', deviceId, 'data');
+                const measurementsQuery = query(measurementsRef, orderBy('timestamp', 'desc'), limit(1));
+                
+                const measurementsListener = onSnapshot(measurementsQuery, async (snapshot) => {
+                    if (!snapshot.empty) {
+                        updateStep(3, 'completed', '✅', 'Première mesure reçue');
+                        updateStep(4, 'active', '🔄', 'Ajout à votre dashboard');
+                        
+                        // Ajouter le device à l'utilisateur
+                        await addDeviceToUser();
+                        
+                        // Nettoyage et redirection
+                        cleanup();
+                        showSuccess();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Erreur surveillance mesures:', error);
+            }
+        }
+
+        async function addDeviceToUser() {
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                await updateDoc(userRef, {
+                    devices: arrayUnion(deviceId)
+                });
+                
+                // Marquer le device comme configuré
+                const deviceRef = doc(db, 'devices', deviceId);
+                await updateDoc(deviceRef, {
+                    'info.owner': currentUser.uid,
+                    'info.isConfigured': true,
+                    'info.configuredAt': new Date()
+                });
+                
+                console.log('✅ Device ajouté à l\'utilisateur');
+                
+            } catch (error) {
+                console.error('❌ Erreur ajout device:', error);
+                throw error;
+            }
+        }
+
+        function updateStep(stepNumber, status, icon, text) {
+            const stepElement = document.getElementById(`step${stepNumber}`);
+            stepElement.className = `step-item ${status}`;
+            stepElement.querySelector('.step-icon').textContent = icon;
+            stepElement.querySelector('.step-text').textContent = text;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - searchStartTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function startProgressBar() {
+            let progress = 10;
+            progressInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+            }, 2000);
+        }
+
+        function showSuccess() {
+            updateUI({
+                icon: '🎉',
+                title: 'Configuration terminée !',
+                description: 'Votre Pico est maintenant connecté et fonctionnel. Redirection vers votre dashboard...',
+                progress: 100
+            });
+
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 3000);
+        }
+
+        function showTimeout() {
+            updateUI({
+                icon: '⏰',
+                title: 'Délai d\'attente dépassé',
+                description: 'Votre Pico ne semble pas répondre. Vérifiez sa connexion et réessayez.',
+                progress: 100
+            });
+        }
+
+        function showError(message) {
+            updateUI({
+                icon: '❌',
+                title: 'Erreur de configuration',
+                description: message,
+                progress: 100
+            });
+        }
+
+        function updateUI({ icon, title, description, progress }) {
+            document.getElementById('statusIcon').textContent = icon;
+            document.getElementById('statusTitle').textContent = title;
+            document.getElementById('statusDescription').textContent = description;
+            if (progress) {
+                document.getElementById('progressFill').style.width = `${progress}%`;
+            }
+        }
+
+        function cleanup() {
+            if (deviceListener) {
+                deviceListener();
+                deviceListener = null;
+            }
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+
+        // Fonctions globales
+        window.restartSearch = function() {
+            cleanup();
+            
+            // Réinitialiser l'UI
+            updateStep(2, 'active', '🔄', 'Enregistrement du capteur en cours');
+            updateStep(3, 'pending', '⏳', 'Première mesure en attente');
+            updateStep(4, 'pending', '📊', 'Ajout à votre dashboard');
+            
+            updateUI({
+                icon: '🔍',
+                title: 'Recherche de votre Pico',
+                description: 'Nous recherchons votre capteur dans la base de données...',
+                progress: 10
+            });
+            
+            startDeviceSearch();
+        };
+
+        // Nettoyage à la fermeture
+        window.addEventListener('beforeunload', cleanup);
+    </script>
+</body>
+</html> 

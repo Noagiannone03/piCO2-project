@@ -904,44 +904,54 @@
                 </div>
             </div>
 
-            <!-- Section des appareils -->
-            <section class="devices-section">
-                <div class="section-header">
-                    <h2 class="section-title">📡 Mes Capteurs</h2>
-                    <button class="btn btn-primary" onclick="showAddDeviceModal()">
-                        ➕ Ajouter un capteur
-                    </button>
-                </div>
+                    <!-- Section des appareils -->
+        <section class="devices-section">
+            <div class="section-header">
+                <h2 class="section-title">📡 Mes Capteurs</h2>
+                <a href="/setup" class="btn btn-primary">
+                    ➕ Configurer un nouveau Pico
+                </a>
+            </div>
 
-                <div id="devicesGrid" class="devices-grid">
-                    <!-- Les appareils seront ajoutés dynamiquement -->
-                    <div class="add-device-card" onclick="showAddDeviceModal()">
-                        <div class="add-device-icon">📡</div>
-                        <h3 class="add-device-title">Ajouter votre premier Pico</h3>
-                        <p class="add-device-description">
-                            Entrez l'ID de votre capteur pour commencer à recevoir des données
-                        </p>
-                    </div>
+            <div id="devicesGrid" class="devices-grid">
+                <!-- Les appareils seront ajoutés dynamiquement -->
+                <div class="add-device-card" onclick="window.location.href='/setup'">
+                    <div class="add-device-icon">🚀</div>
+                    <h3 class="add-device-title">Configurer votre premier Pico</h3>
+                    <p class="add-device-description">
+                        Suivez notre guide étape par étape pour connecter votre capteur My Pico
+                    </p>
                 </div>
-            </section>
+            </div>
+        </section>
         </div>
     </main>
 
-    <!-- Modal d'ajout d'appareil -->
+    <!-- Modal de configuration manuelle (pour les cas spéciaux) -->
     <div id="addDeviceModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">➕ Ajouter un Capteur My Pico</h2>
+                <h2 class="modal-title">⚙️ Configuration Manuelle</h2>
                 <button class="modal-close" onclick="closeAddDeviceModal()">✕</button>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Cette option est pour les utilisateurs avancés uniquement.
+                </p>
+                <p style="color: var(--text-secondary);">
+                    Pour une configuration normale, utilisez le 
+                    <a href="/setup" style="color: var(--primary); text-decoration: none;">tutoriel de configuration</a>.
+                </p>
             </div>
             
             <form id="addDeviceForm" class="modal-form">
                 <div class="form-group">
                     <label class="form-label">ID du Capteur *</label>
                     <input type="text" id="deviceId" class="form-input" 
-                           placeholder="Ex: PICO_001_ABC123" required>
+                           placeholder="Ex: picoAZ12" required>
                     <small style="color: var(--text-secondary); font-size: 0.8rem;">
-                        L'ID unique de votre capteur (visible sur l'écran du Pico)
+                        L'ID unique de votre capteur (affiché sur son écran)
                     </small>
                 </div>
                 
@@ -949,12 +959,6 @@
                     <label class="form-label">Nom du Capteur *</label>
                     <input type="text" id="deviceName" class="form-input" 
                            placeholder="Ex: Salon Principal" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Localisation *</label>
-                    <input type="text" id="deviceLocation" class="form-input" 
-                           placeholder="Ex: Appartement Marseille 13001" required>
                 </div>
                 
                 <div class="form-group">
@@ -980,7 +984,7 @@
                 </div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    🚀 Ajouter le Capteur
+                    🔗 Revendiquer ce Capteur
                 </button>
             </form>
         </div>
@@ -1191,7 +1195,7 @@
             return card;
         }
 
-        // Gestion des modales
+        // Gestion des modales (configuration manuelle)
         window.showAddDeviceModal = function() {
             document.getElementById('addDeviceModal').classList.add('active');
         };
@@ -1201,40 +1205,33 @@
             document.getElementById('addDeviceForm').reset();
         };
 
-        window.addDevice = async function(deviceData) {
+        window.claimDevice = async function(deviceData) {
             try {
+                // Vérifier si le device existe déjà
                 const deviceRef = doc(db, 'devices', deviceData.deviceId);
+                const deviceSnap = await getDoc(deviceRef);
                 
-                // Créer le document de l'appareil
-                await setDoc(deviceRef, {
-                    info: {
-                        deviceId: deviceData.deviceId,
-                        name: deviceData.name,
-                        type: 'pico-co2',
-                        owner: currentUser.uid,
-                        location: {
-                            address: deviceData.location,
-                            room: deviceData.room,
-                            indoor: true
-                        },
-                        isPublic: deviceData.sharePublicly,
-                        createdAt: serverTimestamp(),
-                        lastSeen: null,
-                        status: 'offline'
-                    },
-                    settings: {
-                        alertThresholds: {
-                            warning: 1000,
-                            danger: 1500
-                        },
-                        measurementInterval: 5,
-                        sharePublicly: deviceData.sharePublicly
-                    },
-                    calibration: {
-                        lastCalibration: null,
-                        calibrationOffset: 0,
-                        calibrationNote: ''
-                    }
+                if (!deviceSnap.exists()) {
+                    showError('Ce capteur n\'est pas encore enregistré. Assurez-vous qu\'il soit connecté et configuré.');
+                    return;
+                }
+                
+                const existingData = deviceSnap.data();
+                
+                // Vérifier si le device n'a pas déjà un propriétaire
+                if (existingData.info?.owner && existingData.info.owner !== currentUser.uid) {
+                    showError('Ce capteur appartient déjà à un autre utilisateur.');
+                    return;
+                }
+
+                // Mettre à jour les informations du device
+                await updateDoc(deviceRef, {
+                    'info.owner': currentUser.uid,
+                    'info.name': deviceData.name,
+                    'info.isConfigured': true,
+                    'info.configuredAt': serverTimestamp(),
+                    'info.location.room': deviceData.room,
+                    'settings.sharePublicly': deviceData.sharePublicly
                 });
 
                 // Ajouter l'appareil à la liste de l'utilisateur
@@ -1246,11 +1243,11 @@
                 // Recharger les appareils
                 await loadUserDevices();
                 closeAddDeviceModal();
-                showSuccess('Capteur ajouté avec succès !');
+                showSuccess('Capteur revendiqué avec succès !');
                 
             } catch (error) {
-                console.error('Erreur ajout appareil:', error);
-                showError('Erreur lors de l\'ajout du capteur');
+                console.error('Erreur revendication appareil:', error);
+                showError('Erreur lors de la revendication du capteur');
             }
         };
 
