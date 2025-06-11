@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Pico - Tutoriel de Configuration</title>
+    <title>My Pico - Configuration Step by Step</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,9 +136,12 @@
 
         /* Main Content */
         .main-content {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
@@ -178,56 +181,24 @@
         .setup-subtitle {
             font-size: 1.2rem;
             opacity: 0.9;
-            margin-bottom: 2rem;
         }
 
-        .device-id-input {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: var(--radius-medium);
-            padding: 1rem 1.5rem;
-            font-size: 1.1rem;
-            color: white;
-            text-align: center;
-            max-width: 300px;
-            margin: 0 auto;
-            display: block;
-        }
-
-        .device-id-input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .device-id-input:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
-        }
-
-        /* Steps */
-        .steps-container {
+        /* Step Navigation */
+        .step-navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             margin-bottom: 3rem;
+            gap: 1rem;
         }
 
-        .step-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-large);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-light);
-        }
-
-        .step-header {
+        .step-indicator {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1.5rem;
         }
 
-        .step-number {
-            background: var(--bg-gradient);
-            color: white;
+        .step-dot {
             width: 3rem;
             height: 3rem;
             border-radius: 50%;
@@ -235,47 +206,206 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
         }
 
-        .step-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
+        .step-dot.completed {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-dot.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(0, 122, 255, 0.4);
+        }
+
+        .step-dot.pending {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-light);
+        }
+
+        .step-connector {
+            width: 3rem;
+            height: 2px;
+            background: var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .step-connector.completed {
+            background: var(--success);
+        }
+
+        /* Step Content */
+        .step-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .step-content {
-            color: var(--text-secondary);
-            line-height: 1.6;
+            display: none;
+            flex: 1;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .step-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-large);
+            padding: 3rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .step-icon {
+            font-size: 4rem;
             margin-bottom: 1.5rem;
         }
 
-        .step-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-
-        /* Safety Warning */
-        .safety-warning {
-            background: linear-gradient(135deg, var(--warning) 0%, #FD7E14 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: var(--radius-large);
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .warning-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .warning-title {
-            font-size: 1.5rem;
+        .step-title {
+            font-size: 2rem;
             font-weight: 600;
             margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .step-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* WiFi Detection */
+        .wifi-status {
+            background: var(--bg-surface);
+            border-radius: var(--radius-medium);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: center;
+            border: 2px solid var(--border-light);
+        }
+
+        .wifi-status.connected {
+            border-color: var(--success);
+            background: rgba(52, 199, 89, 0.1);
+        }
+
+        .wifi-loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 2px solid var(--border-light);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Device ID Input */
+        .device-id-section {
+            background: var(--bg-surface);
+            border-radius: var(--radius-medium);
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .device-id-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.2rem;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-medium);
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+        }
+
+        .device-id-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        /* Navigation Buttons */
+        .step-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3rem;
+        }
+
+        .btn-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-medium);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-nav.btn-next {
+            background: var(--bg-gradient);
+            color: white;
+        }
+
+        .btn-nav.btn-prev {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+        }
+
+        /* Special buttons */
+        .btn-pico-connect {
+            background: linear-gradient(135deg, var(--success) 0%, #28A745 100%);
+            color: white;
+            padding: 1.5rem 3rem;
+            font-size: 1.2rem;
+            border-radius: var(--radius-large);
+            box-shadow: var(--shadow-medium);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 2rem auto;
+            display: block;
+        }
+
+        .btn-pico-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-large);
         }
 
         /* Responsive */
@@ -296,29 +426,32 @@
                 font-size: 2rem;
             }
             
-            .setup-subtitle {
+            .step-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .step-navigation {
+                gap: 0.5rem;
+            }
+            
+            .step-dot {
+                width: 2.5rem;
+                height: 2.5rem;
                 font-size: 1rem;
             }
             
-            .step-card {
-                padding: 1.5rem;
-            }
-            
-            .step-header {
-                flex-direction: column;
-                text-align: center;
-                gap: 0.75rem;
+            .step-connector {
+                width: 2rem;
             }
             
             .step-actions {
                 flex-direction: column;
-                align-items: center;
+                gap: 1rem;
             }
             
-            .btn {
-                padding: 0.6rem 1.2rem;
-                font-size: 0.85rem;
-                min-width: 200px;
+            .btn-nav {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -339,149 +472,364 @@
     </nav>
 
     <main class="main-content">
-        <!-- Header du tutoriel -->
+        <!-- Header -->
         <div class="setup-header">
             <div class="setup-header-content">
-                <h1 class="setup-title">🚀 Configuration de votre Pico</h1>
-                <p class="setup-subtitle">
-                    Suivez ce guide étape par étape pour connecter votre capteur My Pico
-                </p>
-                <input type="text" id="deviceIdInput" class="device-id-input" 
-                       placeholder="Ex: picoAZ12" 
-                       value="">
-                <p style="margin-top: 1rem; opacity: 0.8; font-size: 0.9rem;">
-                    Entrez l'ID de votre Pico (affiché sur son écran)
-                </p>
+                <h1 class="setup-title">🚀 Configuration My Pico</h1>
+                <p class="setup-subtitle">Configuration step-by-step de votre capteur</p>
             </div>
         </div>
 
-        <!-- Avertissement de sécurité -->
-        <div class="safety-warning">
-            <div class="warning-icon">⚠️</div>
-            <h3 class="warning-title">Important - Sécurité</h3>
-            <p>
-                Assurez-vous que votre Pico est correctement alimenté et dans un endroit sûr 
-                avant de commencer la configuration. Ne débranchez jamais le capteur pendant 
-                une mesure en cours.
-            </p>
+        <!-- Step Navigation -->
+        <div class="step-navigation">
+            <div class="step-indicator">
+                <div class="step-dot completed" id="step-dot-1">1</div>
+                <div class="step-connector completed"></div>
+                <div class="step-dot active" id="step-dot-2">2</div>
+                <div class="step-connector" id="connector-2"></div>
+                <div class="step-dot pending" id="step-dot-3">3</div>
+                <div class="step-connector" id="connector-3"></div>
+                <div class="step-dot pending" id="step-dot-4">4</div>
+                <div class="step-connector" id="connector-4"></div>
+                <div class="step-dot pending" id="step-dot-5">5</div>
+            </div>
         </div>
 
-        <!-- Étapes du tutoriel -->
-        <div class="steps-container">
-            <!-- Étape 1 -->
-            <div class="step-card">
-                <div class="step-header">
-                    <div class="step-number">1</div>
-                    <h3 class="step-title">Allumer votre Pico</h3>
-                </div>
-                <div class="step-content">
-                    <p>
-                        Connectez votre Pico à l'alimentation. L'écran doit s'allumer et afficher 
-                        l'ID du device (ex: "picoAZ12"). Si c'est le premier démarrage, 
-                        vous verrez un message de configuration.
+        <!-- Step Container -->
+        <div class="step-container">
+            <!-- Étape 1: Device ID -->
+            <div class="step-content" id="step-1">
+                <div class="step-card">
+                    <div class="step-icon">🏷️</div>
+                    <h2 class="step-title">ID de votre Pico</h2>
+                    <p class="step-description">
+                        Entrez l'ID unique de votre Pico (affiché sur son écran)
                     </p>
+                    
+                    <div class="device-id-section">
+                        <input type="text" id="deviceIdInput" class="device-id-input" 
+                               placeholder="Ex: picoAZ12" 
+                               maxlength="15">
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            L'ID se trouve sur l'écran de votre Pico au démarrage
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Étape 2 -->
-            <div class="step-card">
-                <div class="step-header">
-                    <div class="step-number">2</div>
-                    <h3 class="step-title">Connecter au WiFi du Pico</h3>
-                </div>
-                <div class="step-content">
-                    <p>
-                        Sur votre téléphone ou ordinateur, recherchez le réseau WiFi 
-                        <strong>"My-Pico-[ID]"</strong> (ex: "My-Pico-picoAZ12"). 
-                        Connectez-vous avec le mot de passe : <strong>mypico123</strong>
+            <!-- Étape 2: Allumer le Pico -->
+            <div class="step-content active" id="step-2">
+                <div class="step-card">
+                    <div class="step-icon">🔌</div>
+                    <h2 class="step-title">Allumer votre Pico</h2>
+                    <p class="step-description">
+                        Branchez votre Pico et attendez qu'il affiche les instructions de configuration
                     </p>
+                    
+                    <div style="background: var(--bg-surface); padding: 2rem; border-radius: var(--radius-medium); margin: 2rem 0;">
+                        <h4 style="margin-bottom: 1rem;">✅ Vérifications :</h4>
+                        <ul style="text-align: left; color: var(--text-secondary);">
+                            <li>• L'écran s'allume et affiche l'ID du Pico</li>
+                            <li>• Un message de configuration apparaît</li>
+                            <li>• Le Pico crée un point d'accès WiFi</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-            <!-- Étape 3 -->
-            <div class="step-card">
-                <div class="step-header">
-                    <div class="step-number">3</div>
-                    <h3 class="step-title">Configurer votre WiFi</h3>
-                </div>
-                <div class="step-content">
-                    <p>
-                        Une page de configuration s'ouvrira automatiquement. Sélectionnez votre 
-                        réseau WiFi domestique et entrez le mot de passe. Le Pico se connectera 
-                        automatiquement à Internet.
+            <!-- Étape 3: Connexion WiFi Pico -->
+            <div class="step-content" id="step-3">
+                <div class="step-card">
+                    <div class="step-icon">📡</div>
+                    <h2 class="step-title">Connexion au WiFi Pico</h2>
+                    <p class="step-description">
+                        Connectez-vous au réseau WiFi créé par votre Pico
                     </p>
+                    
+                    <div style="background: var(--bg-surface); padding: 2rem; border-radius: var(--radius-medium); margin: 2rem 0;">
+                        <h4 style="margin-bottom: 1rem;">📱 Instructions :</h4>
+                        <ol style="text-align: left; color: var(--text-secondary);">
+                            <li>1. Ouvrez les paramètres WiFi de votre appareil</li>
+                            <li>2. Recherchez le réseau <strong id="pico-ssid">My-Pico-[ID]</strong></li>
+                            <li>3. Connectez-vous avec le mot de passe : <strong>mypico123</strong></li>
+                        </ol>
+                    </div>
+
+                    <div class="wifi-status" id="wifi-status">
+                        <div class="wifi-loading">
+                            <div class="spinner"></div>
+                            <span>Recherche du réseau Pico...</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <button class="btn btn-secondary" onclick="manualPicoConnect()" style="font-size: 0.9rem;">
+                            🔧 J'ai réussi à me connecter manuellement
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Étape 4 -->
-            <div class="step-card">
-                <div class="step-header">
-                    <div class="step-number">4</div>
-                    <h3 class="step-title">Attendre l'enregistrement</h3>
-                </div>
-                <div class="step-content">
-                    <p>
-                        Une fois connecté, votre Pico s'enregistrera automatiquement dans 
-                        la base de données. Cela peut prendre quelques minutes. L'écran 
-                        affichera "Connecté" quand c'est terminé.
+            <!-- Étape 4: Configuration sur le Pico -->
+            <div class="step-content" id="step-4">
+                <div class="step-card">
+                    <div class="step-icon">⚙️</div>
+                    <h2 class="step-title">Configuration WiFi</h2>
+                    <p class="step-description">
+                        Accédez à la page de configuration de votre Pico
                     </p>
+                    
+                    <button id="btn-pico-config" class="btn-pico-connect" style="display: none;">
+                        🌐 Configurer le Pico
+                    </button>
+                    
+                    <div style="background: var(--bg-surface); padding: 2rem; border-radius: var(--radius-medium); margin: 2rem 0;">
+                        <h4 style="margin-bottom: 1rem;">🔧 Sur la page de configuration :</h4>
+                        <ol style="text-align: left; color: var(--text-secondary);">
+                            <li>1. Sélectionnez votre réseau WiFi domestique</li>
+                            <li>2. Entrez le mot de passe WiFi</li>
+                            <li>3. Cliquez sur "Configurer et démarrer"</li>
+                            <li>4. Attendez la redirection automatique</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
 
-            <!-- Étape 5 - Action finale -->
-            <div class="step-card">
-                <div class="step-header">
-                    <div class="step-number">5</div>
-                    <h3 class="step-title">Ajouter à votre dashboard</h3>
-                </div>
-                <div class="step-content">
-                    <p>
-                        Maintenant que votre Pico est configuré, cliquez sur le bouton ci-dessous 
-                        pour l'ajouter à votre dashboard personnel et commencer à surveiller 
-                        la qualité de l'air !
+            <!-- Étape 5: Finalisation -->
+            <div class="step-content" id="step-5">
+                <div class="step-card">
+                    <div class="step-icon">🎉</div>
+                    <h2 class="step-title">Configuration terminée !</h2>
+                    <p class="step-description">
+                        Votre Pico va maintenant s'enregistrer automatiquement et commencer les mesures
                     </p>
-                </div>
-                <div class="step-actions">
-                    <button class="btn btn-primary" onclick="goToConfig()">
-                        🔗 Ajouter mon Pico au dashboard
+                    
+                    <button class="btn-pico-connect" onclick="goToConfig()">
+                        📊 Accéder à mon dashboard
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- Navigation Buttons -->
+        <div class="step-actions">
+            <button class="btn-nav btn-prev" id="btn-prev" onclick="previousStep()">
+                ← Précédent
+            </button>
+            <button class="btn-nav btn-next" id="btn-next" onclick="nextStep()">
+                Suivant →
+            </button>
+        </div>
     </main>
 
     <script>
-        // Récupérer l'ID du device depuis l'URL si présent
-        function getDeviceIdFromURL() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('id') || '';
-        }
+        let currentStep = 2;
+        let deviceId = '';
+        let picoIP = null;
+        let wifiCheckInterval = null;
 
-        // Initialiser avec l'ID depuis l'URL
+        // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            const deviceId = getDeviceIdFromURL();
+            // Récupérer l'ID depuis l'URL si présent
+            const params = new URLSearchParams(window.location.search);
+            deviceId = params.get('id') || '';
+            
             if (deviceId) {
                 document.getElementById('deviceIdInput').value = deviceId;
+                updatePicoSSID();
             }
+            
+            updateStepDisplay();
+            updateNavigation();
         });
 
-        function goToConfig() {
-            const deviceId = document.getElementById('deviceIdInput').value.trim();
-            
-            if (!deviceId) {
-                alert('Veuillez entrer l\'ID de votre Pico avant de continuer.');
-                document.getElementById('deviceIdInput').focus();
-                return;
+        function updatePicoSSID() {
+            if (deviceId) {
+                document.getElementById('pico-ssid').textContent = `My-Pico-${deviceId}`;
             }
-
-            // Rediriger vers la page de configuration
-            window.location.href = `https://noagiannone03.github.io/piCO2-project/config.html?id=${deviceId}`;
         }
 
-        // Permettre d'appuyer sur Entrée dans le champ ID
+        function updateStepDisplay() {
+            // Cacher tous les steps
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Afficher le step actuel
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            
+            // Mettre à jour les indicateurs
+            for (let i = 1; i <= 5; i++) {
+                const dot = document.getElementById(`step-dot-${i}`);
+                const connector = document.getElementById(`connector-${i}`);
+                
+                if (i < currentStep) {
+                    dot.className = 'step-dot completed';
+                    if (connector) connector.className = 'step-connector completed';
+                } else if (i === currentStep) {
+                    dot.className = 'step-dot active';
+                    if (connector) connector.className = 'step-connector';
+                } else {
+                    dot.className = 'step-dot pending';
+                    if (connector) connector.className = 'step-connector';
+                }
+            }
+        }
+
+        function updateNavigation() {
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            
+            btnPrev.disabled = currentStep === 1;
+            
+            if (currentStep === 5) {
+                btnNext.style.display = 'none';
+            } else {
+                btnNext.style.display = 'block';
+            }
+            
+            // Logique spéciale par step
+            if (currentStep === 1) {
+                btnNext.disabled = !deviceId;
+            } else if (currentStep === 3) {
+                startWiFiDetection();
+            } else if (currentStep === 4) {
+                setupPicoConfigButton();
+            }
+        }
+
+        function nextStep() {
+            if (currentStep === 1) {
+                deviceId = document.getElementById('deviceIdInput').value.trim();
+                if (!deviceId) {
+                    alert('Veuillez entrer l\'ID de votre Pico');
+                    return;
+                }
+                updatePicoSSID();
+            }
+            
+            if (currentStep < 5) {
+                currentStep++;
+                updateStepDisplay();
+                updateNavigation();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepDisplay();
+                updateNavigation();
+                
+                // Arrêter la détection WiFi si on revient en arrière
+                if (wifiCheckInterval) {
+                    clearInterval(wifiCheckInterval);
+                    wifiCheckInterval = null;
+                }
+            }
+        }
+
+        function startWiFiDetection() {
+            const wifiStatus = document.getElementById('wifi-status');
+            
+            // Simuler la détection du réseau Pico
+            wifiCheckInterval = setInterval(() => {
+                // Vérifier si on est connecté à un réseau "My-Pico"
+                checkPicoConnection();
+            }, 2000);
+        }
+
+        function checkPicoConnection() {
+            // Tenter une requête vers l'IP standard du Pico
+            const picoTestIP = '192.168.4.1';
+            
+            // Test simple de connectivité
+            fetch(`http://${picoTestIP}`, { 
+                method: 'HEAD', 
+                mode: 'no-cors',
+                timeout: 3000 
+            })
+            .then(() => {
+                // Connexion réussie
+                showPicoConnected(picoTestIP);
+            })
+            .catch(() => {
+                // Pas encore connecté, réessayer dans 3 secondes
+                if (currentStep === 3) {
+                    setTimeout(checkPicoConnection, 3000);
+                }
+            });
+        }
+        
+        function showPicoConnected(ip) {
+            if (currentStep === 3) {
+                const wifiStatus = document.getElementById('wifi-status');
+                wifiStatus.className = 'wifi-status connected';
+                wifiStatus.innerHTML = `
+                    <div style="color: var(--success); font-weight: 600;">
+                        ✅ Connecté au réseau My-Pico-${deviceId}
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        IP Pico détectée: ${ip}
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        Prêt pour la configuration
+                    </div>
+                `;
+                
+                picoIP = ip;
+                
+                // Auto-avancer après connexion
+                setTimeout(() => {
+                    if (currentStep === 3) {
+                        nextStep();
+                    }
+                }, 2000);
+            }
+        }
+
+        function setupPicoConfigButton() {
+            const btnConfig = document.getElementById('btn-pico-config');
+            btnConfig.style.display = 'block';
+            btnConfig.onclick = () => {
+                if (picoIP) {
+                    // Ouvrir la page de config du Pico dans un nouvel onglet
+                    window.open(`http://${picoIP}`, '_blank');
+                    
+                    // Après un délai, proposer de continuer
+                    setTimeout(() => {
+                        if (confirm('Configuration WiFi terminée sur le Pico ?')) {
+                            nextStep();
+                        }
+                    }, 10000);
+                }
+            };
+        }
+
+        function manualPicoConnect() {
+            // Permettre à l'utilisateur de continuer manuellement
+            picoIP = '192.168.4.1';
+            showPicoConnected(picoIP);
+        }
+
+        function goToConfig() {
+            if (deviceId) {
+                window.location.href = `https://noagiannone03.github.io/piCO2-project/config.html?id=${deviceId}`;
+            } else {
+                window.location.href = 'https://noagiannone03.github.io/piCO2-project/dashboard.html';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('deviceIdInput').addEventListener('input', function(e) {
+            deviceId = e.target.value.trim();
+            updateNavigation();
+            updatePicoSSID();
+        });
+
         document.getElementById('deviceIdInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                goToConfig();
+            if (e.key === 'Enter' && deviceId) {
+                nextStep();
             }
         });
     </script>

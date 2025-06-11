@@ -528,6 +528,12 @@
         });
 
         function getDeviceIdFromURL() {
+            // Essayer d'abord le paramètre URL
+            const params = new URLSearchParams(window.location.search);
+            const idFromParam = params.get('id');
+            if (idFromParam) return idFromParam;
+            
+            // Sinon essayer le path (pour compatibilité)
             const path = window.location.pathname;
             const parts = path.split('/');
             return parts[parts.length - 1];

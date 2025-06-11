@@ -544,33 +544,64 @@ def create_config_portal(ap_ip):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Configuration réussie!</title>
         <style>
-            body {{ font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f8ff; text-align: center; }}
-            .container {{ background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-            h1 {{ color: #4CAF50; }}
-            .success {{ font-size: 64px; margin: 20px 0; }}
-            .redirect {{ background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 20px 0; }}
+            body {{ font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 450px; margin: 50px auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }}
+            .container {{ background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; }}
+            h1 {{ color: #34C759; margin-bottom: 1rem; font-size: 1.8rem; }}
+            .success {{ font-size: 4rem; margin: 20px 0; animation: bounce 2s infinite; }}
+            .redirect {{ background: #f0f8ff; padding: 20px; border-radius: 12px; margin: 25px 0; border: 2px solid #e2e8f0; }}
+            .countdown {{ font-size: 2rem; font-weight: bold; color: #667eea; margin: 15px 0; }}
+            .progress-bar {{ background: #e2e8f0; height: 6px; border-radius: 3px; margin: 20px 0; overflow: hidden; }}
+            .progress-fill {{ background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; border-radius: 3px; animation: progressFill 5s linear; }}
+            @keyframes bounce {{ 0%, 20%, 50%, 80%, 100% {{ transform: translateY(0); }} 40% {{ transform: translateY(-10px); }} 60% {{ transform: translateY(-5px); }} }}
+            @keyframes progressFill {{ from {{ width: 0%; }} to {{ width: 100%; }} }}
+            .device-id {{ background: #667eea; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; letter-spacing: 1px; margin: 15px 0; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="success">✅</div>
-            <h1>Configuration réussie!</h1>
-            <p><strong>My Pico {DEVICE_ID} se connecte maintenant...</strong></p>
+            <div class="success">🎉</div>
+            <h1>Configuration WiFi réussie!</h1>
             
-            <div class="redirect">
-                <p>🌐 <strong>Étape suivante:</strong></p>
-                <p>Allez sur <a href="{WEBSITE_URL}/config/{DEVICE_ID}" target="_blank">{WEBSITE_URL}</a></p>
-                <p>pour ajouter votre Pico à votre compte</p>
+            <div class="device-id">Device ID: {DEVICE_ID}</div>
+            
+            <p><strong>Votre Pico se connecte maintenant à Internet...</strong></p>
+            
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
             </div>
             
-            <p><em>Vous pouvez fermer cette page.</em></p>
+            <div class="countdown" id="countdown">5</div>
+            
+            <div class="redirect">
+                <p>🌐 <strong>Redirection automatique vers:</strong></p>
+                <p><a href="{WEBSITE_URL}/config.html?id={DEVICE_ID}" target="_blank">{WEBSITE_URL}/config.html</a></p>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                    Page de finalisation de la configuration
+                </p>
+            </div>
+            
+            <p style="font-size: 0.9rem; color: #888;"><em>Redirection dans quelques secondes...</em></p>
         </div>
         
         <script>
-            // Redirection automatique après 8 secondes
+            let countdown = 5;
+            const countdownElement = document.getElementById('countdown');
+            
+            const timer = setInterval(() => {{
+                countdown--;
+                countdownElement.textContent = countdown;
+                
+                if (countdown <= 0) {{
+                    clearInterval(timer);
+                    countdownElement.textContent = "Redirection...";
+                    window.location.href = "{WEBSITE_URL}/config.html?id={DEVICE_ID}";
+                }}
+            }}, 1000);
+            
+            // Redirection de secours après 6 secondes
             setTimeout(() => {{
-                window.location.href = "{WEBSITE_URL}/config/{DEVICE_ID}";
-            }}, 8000);
+                window.location.href = "{WEBSITE_URL}/config.html?id={DEVICE_ID}";
+            }}, 6000);
         </script>
     </body>
     </html>
