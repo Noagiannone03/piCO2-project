@@ -921,14 +921,27 @@
         });
 
         function getDeviceIdFromURL() {
-            // Extraire l'ID du device depuis l'URL
+            // Extraire l'ID du device depuis les paramètres URL (?id=deviceId)
+            const urlParams = new URLSearchParams(window.location.search);
+            const deviceIdFromParams = urlParams.get('id');
+            
+            if (deviceIdFromParams) {
+                console.log('📱 Device ID depuis paramètres URL:', deviceIdFromParams);
+                return deviceIdFromParams;
+            }
+            
+            // Fallback: extraire depuis le chemin
             const path = window.location.pathname;
             const parts = path.split('/');
-            return parts[parts.length - 1];
+            const deviceIdFromPath = parts[parts.length - 1].replace('.html', '');
+            
+            console.log('📱 Device ID depuis chemin:', deviceIdFromPath);
+            return deviceIdFromPath;
         }
 
         async function loadDeviceData() {
             try {
+                console.log('🔄 Chargement device data pour:', deviceId);
                 document.getElementById('loadingState').style.display = 'block';
                 document.getElementById('deviceContent').style.display = 'none';
 
@@ -938,9 +951,22 @@
 
                 if (deviceSnap.exists()) {
                     deviceData = { id: deviceId, ...deviceSnap.data() };
+                    console.log('📱 Device data récupérée:', deviceData);
                     
                     // Vérifier que l'utilisateur a accès à ce device
-                    if (deviceData.info.owner !== currentUser.uid && !deviceData.info.isPublic) {
+                    const hasAccess = deviceData.info?.owner === currentUser.uid || 
+                                     deviceData.info?.isPublic || 
+                                     deviceData.settings?.sharePublicly;
+                    
+                    console.log('🔐 Vérification accès:', {
+                        owner: deviceData.info?.owner,
+                        currentUser: currentUser.uid,
+                        isPublic: deviceData.info?.isPublic,
+                        sharePublicly: deviceData.settings?.sharePublicly,
+                        hasAccess: hasAccess
+                    });
+                    
+                    if (!hasAccess) {
                         showError('Vous n\'avez pas accès à ce capteur');
                         return;
                     }
@@ -952,6 +978,7 @@
                     document.getElementById('loadingState').style.display = 'none';
                     document.getElementById('deviceContent').style.display = 'block';
                 } else {
+                    console.log('❌ Device non trouvé dans Firestore');
                     showError('Capteur non trouvé');
                 }
             } catch (error) {
@@ -986,6 +1013,7 @@
 
         async function loadMeasurements() {
             try {
+                console.log('🔄 Chargement des mesures pour device:', deviceId);
                 const hours = parseInt(document.getElementById('timeRange').value);
                 const startTime = new Date();
                 startTime.setHours(startTime.getHours() - hours);
@@ -998,16 +1026,58 @@
                     limit(1000)
                 );
 
+                console.log('📊 Requête mesures avec timeRange:', hours, 'heures');
                 const snapshot = await getDocs(q);
+                console.log('📈 Nombre de mesures récupérées:', snapshot.size);
+                
                 measurementsData = [];
                 
                 snapshot.forEach((doc) => {
-                    measurementsData.push({ id: doc.id, ...doc.data() });
+                    const rawData = doc.data();
+                    console.log('📄 Données brutes mesure:', rawData);
+                    
+                    // Gérer les deux formats possibles : SDK normal et API REST
+                    let processedData;
+                    
+                    if (rawData.fields) {
+                        // Format API REST Firestore (utilisé par le Pico)
+                        console.log('📄 Format API REST détecté pour mesure');
+                        processedData = {
+                            id: doc.id,
+                            deviceId: rawData.fields.deviceId?.stringValue || deviceId,
+                            co2_ppm: parseInt(rawData.fields.co2_ppm?.integerValue) || null,
+                            air_quality: rawData.fields.air_quality?.stringValue,
+                            timestamp: rawData.fields.timestamp?.timestampValue ? 
+                                     { toDate: () => new Date(rawData.fields.timestamp.timestampValue) } : null,
+                            temperature: parseFloat(rawData.fields.temperature?.doubleValue),
+                            humidity: parseFloat(rawData.fields.humidity?.doubleValue)
+                        };
+                    } else {
+                        // Format SDK normal
+                        console.log('📄 Format SDK normal détecté pour mesure');
+                        processedData = {
+                            id: doc.id,
+                            deviceId: rawData.deviceId || deviceId,
+                            co2_ppm: rawData.co2_ppm || rawData.co2 || null,
+                            air_quality: rawData.air_quality,
+                            timestamp: rawData.timestamp,
+                            temperature: rawData.temperature,
+                            humidity: rawData.humidity
+                        };
+                    }
+                    
+                    measurementsData.push(processedData);
                 });
 
                 // Trier par timestamp croissant pour les graphiques
-                measurementsData.sort((a, b) => a.timestamp - b.timestamp);
+                measurementsData.sort((a, b) => {
+                    const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0);
+                    const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0);
+                    return timeA - timeB;
+                });
 
+                console.log('✅ Mesures traitées:', measurementsData.length);
+                
                 updateCurrentDisplay();
                 updateStats();
                 updateCharts();
@@ -1034,11 +1104,44 @@
             measurementsListener = onSnapshot(q, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === 'added') {
-                        const newMeasurement = { id: change.doc.id, ...change.doc.data() };
+                        const rawData = change.doc.data();
+                        console.log('🔔 Nouvelle mesure temps réel:', rawData);
+                        
+                        // Traiter la nouvelle mesure avec le bon format
+                        let processedData;
+                        
+                        if (rawData.fields) {
+                            // Format API REST Firestore
+                            processedData = {
+                                id: change.doc.id,
+                                deviceId: rawData.fields.deviceId?.stringValue || deviceId,
+                                co2_ppm: parseInt(rawData.fields.co2_ppm?.integerValue) || null,
+                                air_quality: rawData.fields.air_quality?.stringValue,
+                                timestamp: rawData.fields.timestamp?.timestampValue ? 
+                                         { toDate: () => new Date(rawData.fields.timestamp.timestampValue) } : null,
+                                temperature: parseFloat(rawData.fields.temperature?.doubleValue),
+                                humidity: parseFloat(rawData.fields.humidity?.doubleValue)
+                            };
+                        } else {
+                            // Format SDK normal
+                            processedData = {
+                                id: change.doc.id,
+                                deviceId: rawData.deviceId || deviceId,
+                                co2_ppm: rawData.co2_ppm || rawData.co2 || null,
+                                air_quality: rawData.air_quality,
+                                timestamp: rawData.timestamp,
+                                temperature: rawData.temperature,
+                                humidity: rawData.humidity
+                            };
+                        }
                         
                         // Ajouter la nouvelle mesure et maintenir l'ordre
-                        measurementsData.push(newMeasurement);
-                        measurementsData.sort((a, b) => a.timestamp - b.timestamp);
+                        measurementsData.push(processedData);
+                        measurementsData.sort((a, b) => {
+                            const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0);
+                            const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0);
+                            return timeA - timeB;
+                        });
                         
                         updateCurrentDisplay();
                         updateStats();
@@ -1295,6 +1398,66 @@
                 { text: '↗️ Hausse', color: 'var(--danger)' } : 
                 { text: '↘️ Baisse', color: 'var(--success)' };
         }
+
+        // Fonction de diagnostic (à supprimer après test)
+        window.testDeviceFirestore = async function() {
+            if (!currentUser) {
+                console.log('❌ Pas d\'utilisateur connecté');
+                return;
+            }
+            
+            if (!deviceId) {
+                console.log('❌ Pas d\'ID de device');
+                return;
+            }
+            
+            console.log('🔍 DIAGNOSTIC DEVICE FIRESTORE');
+            console.log('='.repeat(50));
+            console.log('📱 Device ID:', deviceId);
+            
+            try {
+                // 1. Vérifier le device
+                const deviceRef = doc(db, 'devices', deviceId);
+                const deviceSnap = await getDoc(deviceRef);
+                
+                if (deviceSnap.exists()) {
+                    console.log('📱 Device data:', deviceSnap.data());
+                } else {
+                    console.log('❌ Device non trouvé dans devices/');
+                    return;
+                }
+                
+                // 2. Vérifier les mesures dans différents paths
+                const paths = [
+                    ['measurements', deviceId, 'data'],
+                    ['devices', deviceId, 'measurements'],
+                    ['measurements', deviceId],
+                ];
+                
+                for (const path of paths) {
+                    try {
+                        console.log(`🔍 Test path: ${path.join('/')}`);
+                        const testRef = collection(db, ...path);
+                        const testQuery = query(testRef, orderBy('timestamp', 'desc'), limit(5));
+                        const testSnap = await getDocs(testQuery);
+                        
+                        console.log(`📊 Résultats pour ${path.join('/')}: ${testSnap.size} documents`);
+                        
+                        testSnap.forEach((doc, index) => {
+                            console.log(`📈 Document ${index + 1}:`, doc.data());
+                        });
+                    } catch (e) {
+                        console.log(`❌ Erreur pour path ${path.join('/')}: ${e.message}`);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Erreur diagnostic:', error);
+            }
+            
+            console.log('='.repeat(50));
+            console.log('ℹ️  Tapez testDeviceFirestore() dans la console pour relancer');
+        };
 
         // Fonctions globales
         window.goBack = function() {
