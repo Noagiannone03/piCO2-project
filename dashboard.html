@@ -372,54 +372,71 @@
             text-transform: uppercase;
         }
 
-        /* News Card Styles */
-        .news-list {
+        /* Tips Card Styles */
+        .tips-container {
             display: flex;
             flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .main-tip {
+            display: flex;
+            align-items: flex-start;
             gap: 1rem;
-        }
-
-        .news-item {
-            padding: 1rem;
-            background: var(--bg-surface);
+            padding: 1.5rem;
+            background: var(--bg-accent);
             border-radius: var(--radius-medium);
-            border-left: 3px solid var(--primary);
-            transition: all 0.3s ease;
+            border: 2px solid var(--primary);
         }
 
-        .news-item:hover {
-            background: var(--bg-hover);
-            transform: translateX(3px);
+        .tip-icon {
+            font-size: 2rem;
+            flex-shrink: 0;
         }
 
-        .news-title {
-            font-size: 0.9rem;
+        .tip-content h4 {
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
-            line-height: 1.4;
         }
 
-        .news-summary {
-            font-size: 0.8rem;
+        .tip-content p {
+            font-size: 0.9rem;
             color: var(--text-secondary);
             line-height: 1.5;
-            margin-bottom: 0.5rem;
+            margin: 0;
         }
 
-        .news-meta {
+        .quick-tips h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .tips-list {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.7rem;
-            color: var(--text-tertiary);
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
-        .news-source {
-            font-weight: 500;
+        .quick-tip-item {
+            padding: 0.75rem;
+            background: var(--bg-surface);
+            border-radius: var(--radius-medium);
+            border-left: 3px solid var(--success);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
         }
 
-        .weather-loading, .news-loading {
+        .quick-tip-item:hover {
+            background: var(--bg-hover);
+            transform: translateX(2px);
+        }
+
+        .weather-loading, .tips-loading {
             text-align: center;
             padding: 2rem;
             color: var(--text-secondary);
@@ -436,17 +453,16 @@
             margin-top: 0.5rem;
         }
 
-        .map-container {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
+        .map-full-container {
             margin-top: 2rem;
+            position: relative;
         }
 
-        .collaborative-map {
+        .collaborative-map-full {
             background: var(--bg-card);
             border-radius: var(--radius-large);
-            min-height: 500px;
+            min-height: 600px;
+            width: 100%;
             border: 1px solid var(--border-light);
             box-shadow: var(--shadow-soft);
             position: relative;
@@ -462,75 +478,175 @@
             color: var(--text-secondary);
         }
 
-        .map-info {
+        .map-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-medium);
+            padding: 1rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            z-index: 10;
+        }
+
+        .map-legend-compact h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .legend-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .legend-item-compact {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .legend-item-compact span {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Device Details Modal */
+        .device-details-modal {
+            max-width: 800px;
+            width: 95%;
+        }
+
+        .device-details-content {
             display: flex;
             flex-direction: column;
             gap: 2rem;
         }
 
-        .map-legend, .map-stats {
-            background: var(--bg-card);
-            border-radius: var(--radius-large);
-            padding: 2rem;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-light);
-        }
-
-        .map-legend h4, .map-stats h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-        }
-
-        .legend-items {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .legend-item span {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .stats-grid {
+        .device-summary {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-
-        .stat-item {
-            text-align: center;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
             padding: 1rem;
             background: var(--bg-surface);
             border-radius: var(--radius-medium);
         }
 
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
+        .summary-item {
+            text-align: center;
         }
 
-        .stat-label {
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-label {
             font-size: 0.8rem;
             color: var(--text-secondary);
             text-transform: uppercase;
+        }
+
+        .device-chart-container {
+            min-height: 300px;
+            position: relative;
+        }
+
+        .chart-controls {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* Report Modal */
+        .report-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .report-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .report-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-medium);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .report-option:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+        }
+
+        .report-option.selected {
+            background: var(--bg-accent);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        .report-option span {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Map pins styles */
+        .map-pin {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .map-pin:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            z-index: 100;
+        }
+
+        .map-pin.excellent {
+            background: var(--success);
+        }
+
+        .map-pin.good {
+            background: #90EE90;
+        }
+
+        .map-pin.medium {
+            background: var(--warning);
+        }
+
+        .map-pin.bad {
+            background: #FF6B35;
+        }
+
+        .map-pin.danger {
+            background: var(--danger);
         }
 
         .dashboard-header::before {
@@ -844,22 +960,35 @@
             }
 
             /* Collaborative map mobile */
-            .map-container {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .collaborative-map {
+            .collaborative-map-full {
                 min-height: 400px;
             }
 
-            .map-legend, .map-stats {
-                padding: 1.5rem;
+            .map-controls {
+                position: static;
+                margin-bottom: 1rem;
+                background: var(--bg-card);
             }
 
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
+            .legend-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            /* Modal mobile */
+            .device-details-modal {
+                max-width: 95%;
+                margin: 1rem;
+            }
+
+            .device-summary {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .report-options {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
             }
 
             /* Navigation mobile */
@@ -1232,16 +1361,16 @@
                         </div>
                     </div>
 
-                    <!-- Carte Actualités Climat -->
+                    <!-- Carte Tips et Astuces -->
                     <div class="info-card">
                         <div class="info-card-header">
-                            <h3>📰 Actualités Climat</h3>
-                            <div class="info-card-status" id="newsStatus">Chargement...</div>
+                            <h3>💡 Tips & Astuces</h3>
+                            <div class="info-card-status" id="tipsStatus">Chargement...</div>
                         </div>
-                        <div class="info-card-content" id="newsContent">
-                            <div class="news-loading">
+                        <div class="info-card-content" id="tipsContent">
+                            <div class="tips-loading">
                                 <div class="spinner"></div>
-                                <p>Récupération des actualités...</p>
+                                <p>Récupération des conseils...</p>
                             </div>
                         </div>
                     </div>
@@ -1273,52 +1402,112 @@
         <section class="collaborative-map-section">
             <div class="section-header">
                 <h2 class="section-title">🗺️ Carte Collaborative</h2>
-                <p class="section-subtitle">Visualisez la qualité de l'air en temps réel à Marseille</p>
+                <p class="section-subtitle">Visualisez la qualité de l'air en temps réel à Marseille et ajoutez vos signalements</p>
             </div>
             
-            <div class="map-container">
-                <div id="collaborativeMap" class="collaborative-map">
+            <div class="map-full-container">
+                <div id="collaborativeMap" class="collaborative-map-full">
                     <div class="map-loading">
                         <div class="spinner"></div>
                         <p>Chargement de la carte collaborative...</p>
                     </div>
                 </div>
                 
-                <div class="map-info">
-                    <div class="map-legend">
+                <!-- Controls overlay -->
+                <div class="map-controls">
+                    <div class="map-legend-compact">
                         <h4>🎨 Légende</h4>
-                        <div class="legend-items">
-                            <div class="legend-item">
+                        <div class="legend-row">
+                            <div class="legend-item-compact">
                                 <div class="legend-color" style="background: var(--success);"></div>
-                                <span>Excellent (0-400 ppm)</span>
+                                <span>Bon</span>
                             </div>
-                            <div class="legend-item">
+                            <div class="legend-item-compact">
                                 <div class="legend-color" style="background: var(--warning);"></div>
-                                <span>Moyen (400-1000 ppm)</span>
+                                <span>Moyen</span>
                             </div>
-                            <div class="legend-item">
+                            <div class="legend-item-compact">
                                 <div class="legend-color" style="background: var(--danger);"></div>
-                                <span>Mauvais (1000+ ppm)</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="map-stats">
-                        <h4>📊 Statistiques en direct</h4>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-value" id="activeDevices">--</div>
-                                <div class="stat-label">Capteurs actifs</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="avgCO2">-- ppm</div>
-                                <div class="stat-label">CO2 moyen</div>
+                                <span>Mauvais</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- Modal Popup Device Details -->
+        <div id="deviceDetailsModal" class="modal">
+            <div class="modal-content device-details-modal">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="deviceModalTitle">Détails du Capteur</h2>
+                    <button class="modal-close" onclick="closeDeviceDetailsModal()">✕</button>
+                </div>
+                
+                <div class="device-details-content">
+                    <div class="device-summary" id="deviceSummary">
+                        <!-- Résumé du device -->
+                    </div>
+                    
+                    <div class="device-chart-container">
+                        <canvas id="deviceChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="chart-controls">
+                        <button class="btn btn-secondary btn-small" onclick="changeChartPeriod('1h')">1h</button>
+                        <button class="btn btn-secondary btn-small" onclick="changeChartPeriod('6h')">6h</button>
+                        <button class="btn btn-primary btn-small" onclick="changeChartPeriod('24h')">24h</button>
+                        <button class="btn btn-secondary btn-small" onclick="changeChartPeriod('7d')">7j</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Signalement -->
+        <div id="reportModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">🚨 Nouveau Signalement</h2>
+                    <button class="modal-close" onclick="closeReportModal()">✕</button>
+                </div>
+                
+                <div class="report-form">
+                    <p><strong>Point sélectionné :</strong> <span id="reportTimestamp"></span></p>
+                    <p><strong>Valeur CO2 :</strong> <span id="reportCO2Value"></span> ppm</p>
+                    
+                    <h4>Quelle est la cause probable ?</h4>
+                    <div class="report-options">
+                        <div class="report-option" onclick="selectReport('traffic')">
+                            🚗 <span>Trafic dense</span>
+                        </div>
+                        <div class="report-option" onclick="selectReport('construction')">
+                            🚧 <span>Travaux</span>
+                        </div>
+                        <div class="report-option" onclick="selectReport('factory')">
+                            🏭 <span>Usine / Industrie</span>
+                        </div>
+                        <div class="report-option" onclick="selectReport('fire')">
+                            🔥 <span>Incendie / Fumée</span>
+                        </div>
+                        <div class="report-option" onclick="selectReport('event')">
+                            🎪 <span>Événement</span>
+                        </div>
+                        <div class="report-option" onclick="selectReport('other')">
+                            ❓ <span>Autre</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Commentaire (optionnel)</label>
+                        <textarea id="reportComment" class="form-input" rows="3" placeholder="Décrivez ce que vous avez observé..."></textarea>
+                    </div>
+                    
+                    <button id="submitReport" class="btn btn-primary" style="width: 100%;" onclick="submitReport()">
+                        📤 Envoyer le signalement
+                    </button>
+                </div>
+            </div>
+        </div>
         </div>
     </main>
 
@@ -1389,7 +1578,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp, orderBy, limit, addDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
         // Configuration Firebase
         const firebaseConfig = {
@@ -1420,7 +1609,7 @@
                 updateUserProfile(user);
                 loadUserDevices();
                 loadWeatherData();
-                loadClimateNews();
+                loadEnvironmentalTips();
                 loadCollaborativeMap();
                 
                 // Rafraîchir les données toutes les 30 secondes
@@ -1437,10 +1626,10 @@
                     }
                 }, 600000);
 
-                // Rafraîchir les actualités toutes les heures
+                // Rafraîchir les tips toutes les heures
                 setInterval(() => {
                     if (currentUser && document.getElementById('dashboardState').classList.contains('active')) {
-                        loadClimateNews();
+                        loadEnvironmentalTips();
                     }
                 }, 3600000);
             } else {
@@ -1954,25 +2143,22 @@
             try {
                 console.log('🌤️ Chargement météo Marseille...');
                 
-                // API OpenWeatherMap gratuite
-                const API_KEY = '60ad76f2e12d0f29b3d8d71eae8b2015'; // Clé API publique d'exemple
-                const response = await fetch(
-                    `https://api.openweathermap.org/data/2.5/weather?q=Marseille,FR&appid=${API_KEY}&units=metric&lang=fr`
-                );
+                // Utiliser l'API locale du serveur
+                const response = await fetch('/api/weather');
                 
                 if (response.ok) {
                     const weatherData = await response.json();
                     displayWeatherData(weatherData);
                     document.getElementById('weatherStatus').textContent = '🟢 En ligne';
                 } else {
-                    throw new Error('Erreur API météo');
+                    throw new Error('Erreur API météo locale');
                 }
             } catch (error) {
                 console.error('Erreur chargement météo:', error);
                 document.getElementById('weatherContent').innerHTML = `
                     <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
                         <p>❌ Impossible de charger les données météo</p>
-                        <small>Vérifiez votre connexion internet</small>
+                        <small>Service météo temporairement indisponible</small>
                     </div>
                 `;
                 document.getElementById('weatherStatus').textContent = '🔴 Hors ligne';
@@ -1982,12 +2168,10 @@
         }
 
         function displayWeatherData(data) {
-            const temp = Math.round(data.main.temp);
-            const feelsLike = Math.round(data.main.feels_like);
-            const humidity = data.main.humidity;
-            const windSpeed = Math.round(data.wind.speed * 3.6); // m/s vers km/h
-            const description = data.weather[0].description;
-            const icon = data.weather[0].icon;
+            const temp = data.temperature;
+            const description = data.description;
+            const humidity = data.humidity;
+            const pressure = data.pressure;
 
             document.getElementById('weatherContent').innerHTML = `
                 <div class="weather-main">
@@ -2000,161 +2184,452 @@
                 
                 <div class="weather-details">
                     <div class="weather-detail">
-                        <div class="weather-detail-value">${feelsLike}°C</div>
-                        <div class="weather-detail-label">Ressenti</div>
+                        <div class="weather-detail-value">${temp}°C</div>
+                        <div class="weather-detail-label">Température</div>
                     </div>
                     <div class="weather-detail">
                         <div class="weather-detail-value">${humidity}%</div>
                         <div class="weather-detail-label">Humidité</div>
                     </div>
                     <div class="weather-detail">
-                        <div class="weather-detail-value">${windSpeed} km/h</div>
-                        <div class="weather-detail-label">Vent</div>
+                        <div class="weather-detail-value">${pressure} hPa</div>
+                        <div class="weather-detail-label">Pression</div>
                     </div>
                     <div class="weather-detail">
-                        <div class="weather-detail-value">${data.main.pressure} hPa</div>
-                        <div class="weather-detail-label">Pression</div>
+                        <div class="weather-detail-value">Bon</div>
+                        <div class="weather-detail-label">Qualité</div>
                     </div>
                 </div>
             `;
         }
 
-        async function loadClimateNews() {
+        async function loadEnvironmentalTips() {
             try {
-                console.log('📰 Chargement actualités climat...');
+                console.log('💡 Chargement conseils environnementaux...');
                 
-                // Utilisation d'une API d'actualités simple ou données simulées
-                const newsData = await fetchClimateNews();
-                displayClimateNews(newsData);
-                document.getElementById('newsStatus').textContent = '🟢 Actualisé';
+                // Utiliser l'API locale du serveur
+                const response = await fetch('/api/tips');
+                
+                if (response.ok) {
+                    const tipsData = await response.json();
+                    displayEnvironmentalTips(tipsData);
+                    document.getElementById('tipsStatus').textContent = '🟢 Actualisé';
+                } else {
+                    throw new Error('Erreur API tips');
+                }
             } catch (error) {
-                console.error('Erreur chargement actualités:', error);
-                document.getElementById('newsContent').innerHTML = `
+                console.error('Erreur chargement tips:', error);
+                document.getElementById('tipsContent').innerHTML = `
                     <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                        <p>❌ Impossible de charger les actualités</p>
+                        <p>❌ Impossible de charger les conseils</p>
                         <small>Service temporairement indisponible</small>
                     </div>
                 `;
-                document.getElementById('newsStatus').textContent = '🔴 Erreur';
-                document.getElementById('newsStatus').style.background = 'rgba(255, 59, 48, 0.1)';
-                document.getElementById('newsStatus').style.color = 'var(--danger)';
+                document.getElementById('tipsStatus').textContent = '🔴 Erreur';
+                document.getElementById('tipsStatus').style.background = 'rgba(255, 59, 48, 0.1)';
+                document.getElementById('tipsStatus').style.color = 'var(--danger)';
             }
         }
 
-        async function fetchClimateNews() {
-            // Simulation d'actualités locales (en attendant une vraie API)
-            return [
-                {
-                    title: "Qualité de l'air à Marseille : amélioration notable ce mois-ci",
-                    summary: "Les mesures de CO2 dans la ville montrent une tendance positive grâce aux nouvelles initiatives écologiques...",
-                    source: "La Provence",
-                    publishedAt: new Date(Date.now() - 2 * 3600 * 1000).toLocaleDateString(),
-                    url: "#"
-                },
-                {
-                    title: "Nouveau réseau de capteurs citoyens déployé dans les quartiers",
-                    summary: "L'initiative My Pico permet aux habitants de surveiller la qualité de l'air en temps réel...",
-                    source: "Marseille.fr",
-                    publishedAt: new Date(Date.now() - 6 * 3600 * 1000).toLocaleDateString(),
-                    url: "#"
-                },
-                {
-                    title: "Canicule : impact sur la qualité de l'air urbain",
-                    summary: "Les experts recommandent une surveillance accrue des niveaux de CO2 pendant les épisodes de chaleur...",
-                    source: "France 3 PACA",
-                    publishedAt: new Date(Date.now() - 24 * 3600 * 1000).toLocaleDateString(),
-                    url: "#"
-                }
+        function displayEnvironmentalTips(tipsData) {
+            const mainTip = tipsData.tip;
+            
+            // Quelques tips supplémentaires fixes pour enrichir la section
+            const additionalTips = [
+                "🌱 Ajoutez des plantes vertes pour purifier naturellement l'air",
+                "🪟 Aérez régulièrement : 5-10 min matin et soir suffisent",
+                "📊 Maintenez le CO2 sous 1000 ppm pour un air de qualité",
+                "🏃‍♂️ Après le sport, pensez à renouveler l'air de la pièce"
             ];
-        }
 
-        function displayClimateNews(newsData) {
-            const newsHtml = newsData.map(article => `
-                <div class="news-item">
-                    <div class="news-title">${article.title}</div>
-                    <div class="news-summary">${article.summary}</div>
-                    <div class="news-meta">
-                        <span class="news-source">${article.source}</span>
-                        <span>${article.publishedAt}</span>
+            document.getElementById('tipsContent').innerHTML = `
+                <div class="tips-container">
+                    <div class="main-tip">
+                        <div class="tip-icon">💡</div>
+                        <div class="tip-content">
+                            <h4>Conseil du jour</h4>
+                            <p>${mainTip}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-tips">
+                        <h5>🎯 Conseils rapides</h5>
+                        <div class="tips-list">
+                            ${additionalTips.map(tip => `
+                                <div class="quick-tip-item">
+                                    ${tip}
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
-            `).join('');
-
-            document.getElementById('newsContent').innerHTML = `
-                <div class="news-list">${newsHtml}</div>
             `;
         }
+
+        // Variables globales pour la carte
+        let mapDevices = [];
+        let currentChart = null;
+        let selectedReportData = null;
+        let selectedReportType = null;
 
         async function loadCollaborativeMap() {
             try {
                 console.log('🗺️ Chargement carte collaborative...');
                 
-                // Simulation de chargement de la carte
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Charger tous les devices publics depuis Firestore
+                const devicesQuery = query(collection(db, 'devices'));
+                const devicesSnapshot = await getDocs(devicesQuery);
                 
-                // Charger les statistiques des appareils publics
-                await loadPublicDevicesStats();
+                mapDevices = [];
                 
-                document.getElementById('collaborativeMap').innerHTML = `
-                    <div style="
-                        width: 100%; 
-                        height: 100%; 
-                        background: linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        flex-direction: column;
-                        text-align: center;
-                        padding: 2rem;
-                    ">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🗺️</div>
-                        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Carte Interactive à venir</h3>
-                        <p style="color: var(--text-secondary); max-width: 300px; line-height: 1.5;">
-                            La carte collaborative des capteurs My Pico sera bientôt disponible avec la visualisation en temps réel des données de qualité de l'air.
-                        </p>
-                        <div style="margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.8); border-radius: 12px;">
-                            <strong style="color: var(--primary);">Fonctionnalités prévues :</strong><br>
-                            • Visualisation des capteurs en temps réel<br>
-                            • Zones de qualité d'air colorisées<br>
-                            • Historique des données<br>
-                            • Alertes de pollution
-                        </div>
-                    </div>
-                `;
+                // Traiter chaque device
+                for (const deviceDoc of devicesSnapshot.docs) {
+                    const deviceData = { id: deviceDoc.id, ...deviceDoc.data() };
+                    
+                    // Récupérer les dernières mesures
+                    try {
+                        const measurementsRef = collection(db, 'measurements', deviceDoc.id, 'data');
+                        const recentQuery = query(measurementsRef, orderBy('timestamp', 'desc'), limit(20));
+                        const measurementsSnap = await getDocs(recentQuery);
+                        
+                        if (!measurementsSnap.empty) {
+                            const measurements = [];
+                            let totalCO2 = 0;
+                            let validCount = 0;
+                            
+                            measurementsSnap.forEach(doc => {
+                                const data = doc.data();
+                                let co2Value = null;
+                                
+                                if (data.fields) {
+                                    // Format API REST
+                                    co2Value = parseInt(data.fields.co2_ppm?.integerValue) || null;
+                                } else {
+                                    // Format SDK normal
+                                    co2Value = data.co2_ppm || data.co2 || null;
+                                }
+                                
+                                if (co2Value && typeof co2Value === 'number') {
+                                    measurements.push({ ...data, co2_ppm: co2Value });
+                                    totalCO2 += co2Value;
+                                    validCount++;
+                                }
+                            });
+                            
+                            if (validCount > 0) {
+                                deviceData.measurements = measurements;
+                                deviceData.avgCO2 = Math.round(totalCO2 / validCount);
+                                deviceData.lastMeasurement = measurements[0];
+                                
+                                // Ajouter des coordonnées simulées pour Marseille
+                                deviceData.coordinates = getRandomMarseilleCoordinates();
+                                
+                                mapDevices.push(deviceData);
+                            }
+                        }
+                    } catch (measurementError) {
+                        console.error(`Erreur mesures pour ${deviceDoc.id}:`, measurementError);
+                    }
+                }
+                
+                console.log(`🗺️ ${mapDevices.length} devices chargés pour la carte`);
+                
+                // Générer la carte
+                renderCollaborativeMap();
                 
             } catch (error) {
                 console.error('Erreur chargement carte:', error);
                 document.getElementById('collaborativeMap').innerHTML = `
                     <div class="map-loading">
                         <p>❌ Erreur de chargement de la carte</p>
+                        <small>Vérifiez votre connexion</small>
                     </div>
                 `;
             }
         }
 
-        async function loadPublicDevicesStats() {
-            try {
-                // Charger les statistiques depuis Firestore
-                const devicesQuery = query(collection(db, 'devices'));
-                const querySnapshot = await getDocs(devicesQuery);
+        function getRandomMarseilleCoordinates() {
+            // Coordonnées approximatives de Marseille
+            const marseilleCenter = { lat: 43.2965, lng: 5.3698 };
+            const radius = 0.05; // Rayon approximatif pour couvrir Marseille
+            
+            return {
+                lat: marseilleCenter.lat + (Math.random() - 0.5) * radius,
+                lng: marseilleCenter.lng + (Math.random() - 0.5) * radius
+            };
+        }
+
+        function renderCollaborativeMap() {
+            const mapContainer = document.getElementById('collaborativeMap');
+            
+            // Créer le fond de carte stylisé
+            mapContainer.innerHTML = `
+                <div style="
+                    width: 100%; 
+                    height: 100%; 
+                    background: linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%);
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <!-- Fond de carte stylisé -->
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background-image: 
+                            radial-gradient(circle at 20% 30%, rgba(0,122,255,0.1) 0%, transparent 50%),
+                            radial-gradient(circle at 80% 70%, rgba(52,199,89,0.1) 0%, transparent 50%),
+                            radial-gradient(circle at 60% 20%, rgba(255,149,0,0.1) 0%, transparent 50%);
+                    "></div>
+                    
+                    <!-- Texte central -->
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        text-align: center;
+                        z-index: 1;
+                    ">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🗺️</div>
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Carte de Marseille</h3>
+                        <p style="color: var(--text-secondary);">
+                            ${mapDevices.length} capteurs actifs détectés
+                        </p>
+                    </div>
+                    
+                    <!-- Pins des devices -->
+                    <div id="mapPins"></div>
+                </div>
+            `;
+            
+            // Ajouter les pins des devices
+            const pinsContainer = document.getElementById('mapPins');
+            
+            mapDevices.forEach((device, index) => {
+                const pin = document.createElement('div');
+                pin.className = `map-pin ${getCO2Class(device.avgCO2)}`;
+                pin.style.left = `${20 + (index % 8) * 10}%`;
+                pin.style.top = `${20 + Math.floor(index / 8) * 15}%`;
+                pin.onclick = () => openDeviceDetails(device);
+                pin.title = `${device.info?.name || device.id} - ${device.avgCO2} ppm`;
                 
-                let activeDevices = 0;
-                let totalCO2 = 0;
-                let validMeasurements = 0;
+                pinsContainer.appendChild(pin);
+            });
+        }
 
-                // Simuler quelques données en attendant de vraies données publiques
-                activeDevices = 12;
-                const avgCO2 = 480;
+        function getCO2Class(co2Value) {
+            if (co2Value < 400) return 'excellent';
+            if (co2Value < 600) return 'good';
+            if (co2Value < 1000) return 'medium';
+            if (co2Value < 1500) return 'bad';
+            return 'danger';
+        }
 
-                document.getElementById('activeDevices').textContent = activeDevices;
-                document.getElementById('avgCO2').textContent = `${avgCO2} ppm`;
+        function getCO2Label(co2Value) {
+            if (co2Value < 400) return '🟢 Excellent';
+            if (co2Value < 600) return '🟡 Bon';
+            if (co2Value < 1000) return '🟠 Moyen';
+            if (co2Value < 1500) return '🔴 Mauvais';
+            return '⚫ Dangereux';
+        }
+
+        // Fonctions pour les modales et signalements
+        async function openDeviceDetails(device) {
+            const modal = document.getElementById('deviceDetailsModal');
+            document.getElementById('deviceModalTitle').textContent = device.info?.name || device.id;
+            
+            // Résumé du device
+            document.getElementById('deviceSummary').innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-value">${device.avgCO2} ppm</div>
+                    <div class="summary-label">CO2 Moyen</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${getCO2Label(device.avgCO2)}</div>
+                    <div class="summary-label">Qualité</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${device.measurements?.length || 0}</div>
+                    <div class="summary-label">Mesures</div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+            
+            // Charger le graphique
+            await loadDeviceChart(device, '24h');
+        }
+
+        async function loadDeviceChart(device, period) {
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const ctx = document.getElementById('deviceChart').getContext('2d');
+            
+            // Préparer les données selon la période
+            let data = device.measurements || [];
+            if (period === '1h') {
+                data = data.slice(0, 12); // Dernière heure (5min * 12)
+            } else if (period === '6h') {
+                data = data.slice(0, 72); // Dernières 6h
+            }
+            
+            const chartData = data.reverse().map((measurement, index) => ({
+                x: index,
+                y: measurement.co2_ppm,
+                timestamp: measurement.timestamp,
+                measurement: measurement
+            }));
+            
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'CO2 (ppm)',
+                        data: chartData,
+                        borderColor: 'var(--primary)',
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const point = chartData[context[0].dataIndex];
+                                    return `Mesure #${context[0].dataIndex + 1}`;
+                                },
+                                label: function(context) {
+                                    return `CO2: ${context.parsed.y} ppm`;
+                                },
+                                afterLabel: function(context) {
+                                    return 'Clic pour signaler un incident';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Chronologie'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'CO2 (ppm)'
+                            },
+                            beginAtZero: false
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const pointIndex = elements[0].index;
+                            const measurement = chartData[pointIndex].measurement;
+                            openReportModal(measurement, device);
+                        }
+                    }
+                }
+            });
+        }
+
+        function openReportModal(measurement, device) {
+            selectedReportData = { measurement, device };
+            selectedReportType = null;
+            
+            document.getElementById('reportTimestamp').textContent = 
+                new Date(measurement.timestamp).toLocaleString();
+            document.getElementById('reportCO2Value').textContent = measurement.co2_ppm;
+            
+            // Reset form
+            document.querySelectorAll('.report-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.getElementById('reportComment').value = '';
+            document.getElementById('submitReport').disabled = true;
+            
+            document.getElementById('reportModal').classList.add('active');
+        }
+
+        window.selectReport = function(reportType) {
+            selectedReportType = reportType;
+            
+            // Update UI
+            document.querySelectorAll('.report-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.closest('.report-option').classList.add('selected');
+            
+            document.getElementById('submitReport').disabled = false;
+        };
+
+        window.submitReport = async function() {
+            if (!selectedReportData || !selectedReportType) return;
+            
+            try {
+                const reportData = {
+                    deviceId: selectedReportData.device.id,
+                    measurementTimestamp: selectedReportData.measurement.timestamp,
+                    co2Value: selectedReportData.measurement.co2_ppm,
+                    reportType: selectedReportType,
+                    comment: document.getElementById('reportComment').value,
+                    reportedBy: currentUser.uid,
+                    reportedAt: serverTimestamp(),
+                    likes: 0,
+                    dislikes: 0,
+                    verified: false
+                };
+                
+                // Sauvegarder dans Firestore
+                const reportsRef = collection(db, 'reports');
+                await addDoc(reportsRef, reportData);
+                
+                showSuccess('Signalement envoyé avec succès ! Merci pour votre contribution.');
+                closeReportModal();
                 
             } catch (error) {
-                console.error('Erreur stats publiques:', error);
-                document.getElementById('activeDevices').textContent = '--';
-                document.getElementById('avgCO2').textContent = '-- ppm';
+                console.error('Erreur envoi signalement:', error);
+                showError('Erreur lors de l\'envoi du signalement');
             }
-        }
+        };
+
+        window.closeDeviceDetailsModal = function() {
+            document.getElementById('deviceDetailsModal').classList.remove('active');
+            if (currentChart) {
+                currentChart.destroy();
+                currentChart = null;
+            }
+        };
+
+        window.closeReportModal = function() {
+            document.getElementById('reportModal').classList.remove('active');
+            selectedReportData = null;
+            selectedReportType = null;
+        };
+
+        window.changeChartPeriod = function(period) {
+            if (selectedReportData) {
+                loadDeviceChart(selectedReportData.device, period);
+            }
+        };
 
         // Fonction de diagnostic Firestore (à supprimer après test)
         window.testFirestore = async function() {
