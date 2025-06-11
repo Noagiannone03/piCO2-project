@@ -45,7 +45,7 @@ FIREBASE_PROJECT_ID = "my-pico-cf271"
 FIREBASE_API_KEY = "AIzaSyAl_i1UGJ1tVTEAkn8xhSbwe_iKk0eYryk"
 FIREBASE_BASE_URL = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents"
 
-WEBSITE_URL = "https://mypico.noagiannone.fr"
+WEBSITE_URL = "https://noagiannone03.github.io/piCO2-project"
 CONFIG_FILE = "pico_config.json"
 FIRST_BOOT_FLAG = "first_boot.flag"
 

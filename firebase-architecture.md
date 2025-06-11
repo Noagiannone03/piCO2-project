@@ -125,7 +125,7 @@ publicStats/marseille/zones/{zoneId}
 ### 1. Premier démarrage du Pico
 ```
 Pico démarre → Vérifie first_boot_flag → Si premier boot:
-└── Affiche "Configuration initiale - Connectez-vous à mypico.noagiannone.fr"
+└── Affiche "Configuration initiale - Connectez-vous à https://noagiannone03.github.io/piCO2-project"
 └── Active point d'accès WiFi "My-Pico-picoAZ12"
 └── Attend configuration WiFi
 ```
@@ -231,7 +231,7 @@ service cloud.firestore {
 
 ### Frontend
 - **Hébergement**: Firebase Hosting
-- **Domaine**: mypico.noagiannone.fr
+- **Domaine**: https://noagiannone03.github.io/piCO2-project
 - **CDN**: Global via Firebase
 
 ### Backend
