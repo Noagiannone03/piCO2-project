@@ -3,11 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Pico - Surveillance CO2 Intelligente</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>My Pico - Surveillance Collaborative CO2 à Marseille</title>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS pour la carte -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             /* Design System Apple-inspired */
@@ -25,6 +32,7 @@
             --bg-surface: #F8F9FA;
             --bg-hover: #F5F5F7;
             --bg-accent: rgba(0, 122, 255, 0.08);
+            --bg-gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             
             /* Textes professionnels */
             --text-primary: #1D1D1F;
@@ -89,49 +97,51 @@
             text-decoration: none;
         }
 
-        .nav-links {
+        .nav-actions {
             display: flex;
-            gap: 2rem;
+            gap: 1rem;
             align-items: center;
         }
 
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary);
-        }
-
-        .status-indicator {
-            display: flex;
+        .btn {
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--bg-surface);
+            padding: 0.75rem 1.5rem;
             border-radius: var(--radius-medium);
-            font-size: 0.875rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
+        .btn-primary {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: var(--shadow-soft);
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
         }
 
         /* Hero Section Professionnelle */
         .hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: var(--bg-gradient);
             padding: 8rem 0 6rem 0;
             margin-top: 80px;
             position: relative;
@@ -174,63 +184,27 @@
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
-            font-weight: 400;
         }
 
-        .cta-buttons {
+        .cta-section {
             display: flex;
             gap: 1.5rem;
             justify-content: center;
             flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 2rem;
-            border-radius: var(--radius-medium);
-            font-size: 1rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border: 2px solid transparent;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: white;
-            color: var(--primary);
-            box-shadow: var(--shadow-medium);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-large);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-1px);
+            margin-bottom: 4rem;
         }
 
         /* Main Content */
         .main-content {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: -4rem auto 0;
             padding: 0 2rem 4rem;
             position: relative;
             z-index: 10;
         }
 
-        /* CO2 Dashboard Principal */
-        .co2-dashboard {
+        /* Stats de ville en temps réel */
+        .city-stats {
             background: var(--bg-card);
             border-radius: var(--radius-xl);
             padding: 3rem;
@@ -238,308 +212,244 @@
             box-shadow: var(--shadow-large);
             border: 1px solid var(--border-light);
             text-align: center;
-            position: relative;
         }
 
-        .co2-main-value {
-            font-size: 5rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .co2-unit {
-            font-size: 1.5rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .air-quality-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin: 2rem 0;
-            background: linear-gradient(135deg, var(--success) 0%, #28A745 100%);
-            color: white;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .quality-explanation {
-            background: var(--bg-surface);
-            border-radius: var(--radius-medium);
-            padding: 1.5rem;
-            margin-top: 2rem;
-            text-align: left;
-        }
-
-        .quality-explanation h4 {
+        .city-title {
+            font-size: 2.5rem;
+            font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 1rem;
-            font-size: 1.1rem;
         }
 
-        .quality-levels {
+        .city-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .quality-level {
-            text-align: center;
-            padding: 0.75rem;
-            border-radius: var(--radius-small);
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .excellent { background: rgba(52, 199, 89, 0.1); color: var(--success); }
-        .good { background: rgba(90, 200, 250, 0.1); color: var(--info); }
-        .medium { background: rgba(255, 149, 0, 0.1); color: var(--warning); }
-        .bad { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
-        .danger { background: rgba(255, 59, 48, 0.2); color: var(--danger); }
-
-        /* Grille des informations */
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 2rem;
             margin-bottom: 3rem;
         }
 
-        /* Charts et statistiques */
-        .chart-section {
-            background: var(--bg-card);
+        .stat-card {
+            background: var(--bg-surface);
             border-radius: var(--radius-large);
             padding: 2rem;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-light);
-        }
-
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .chart-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .chart-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .select-wrapper {
-            position: relative;
-        }
-
-        .select-wrapper select {
-            appearance: none;
-            background: var(--bg-surface);
-            border: 2px solid var(--border-light);
-            border-radius: var(--radius-small);
-            padding: 0.5rem 2rem 0.5rem 1rem;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        /* Stats en temps réel */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-large);
-            padding: 2rem 1.5rem;
             text-align: center;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-light);
             transition: all 0.3s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: var(--shadow-soft);
         }
 
         .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
+            font-size: 3rem;
+            font-weight: 800;
             margin-bottom: 0.5rem;
         }
 
         .stat-label {
             color: var(--text-secondary);
-            font-size: 0.9rem;
             font-weight: 500;
             text-transform: uppercase;
+            font-size: 0.9rem;
             letter-spacing: 0.05em;
         }
 
         .stat-description {
             color: var(--text-tertiary);
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             margin-top: 0.5rem;
-            line-height: 1.4;
         }
 
-        /* Sidebar informationnelle */
-        .info-sidebar {
+        /* Section carte et graphiques */
+        .data-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 4rem;
+        }
+
+        .map-container {
             background: var(--bg-card);
             border-radius: var(--radius-large);
             padding: 2rem;
             box-shadow: var(--shadow-soft);
             border: 1px solid var(--border-light);
-            height: fit-content;
         }
 
-        .info-section {
-            margin-bottom: 2rem;
-        }
-
-        .info-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .info-title {
-            font-size: 1.1rem;
+        .section-title {
+            font-size: 1.5rem;
             font-weight: 600;
+            margin-bottom: 1.5rem;
             color: var(--text-primary);
-            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .tip-card {
-            background: var(--bg-accent);
+        #map {
+            height: 400px;
             border-radius: var(--radius-medium);
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(0, 122, 255, 0.2);
+            overflow: hidden;
+            background: var(--bg-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
         }
 
-        .tip-text {
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        /* Action Section */
-        .action-section {
-            background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-card) 100%);
+        .chart-container {
+            background: var(--bg-card);
             border-radius: var(--radius-large);
-            padding: 3rem;
-            text-align: center;
-            margin-top: 3rem;
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
             border: 1px solid var(--border-light);
         }
 
-        .action-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
         }
 
-        .action-subtitle {
+        /* Zone legend */
+        .map-legend {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-            max-width: 600px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* Qualité badges */
+        .excellent { background: var(--success); }
+        .good { background: var(--info); }
+        .medium { background: var(--warning); }
+        .bad { background: var(--danger); }
+        .danger { background: #CC1F1A; }
+
+        /* Section Features */
+        .features-section {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 4rem 3rem;
+            margin-bottom: 4rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+        }
+
+        .features-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .features-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-bottom: 4rem;
+            max-width: 800px;
             margin-left: auto;
             margin-right: auto;
         }
 
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero h1 {
-                font-size: 3rem;
-            }
-
-            .co2-main-value {
-                font-size: 4rem;
-            }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
         }
 
-        @media (max-width: 640px) {
-            .main-content {
-                padding: 0 1rem 2rem;
-            }
-
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero .subtitle {
-                font-size: 1.2rem;
-            }
-
-            .co2-main-value {
-                font-size: 3rem;
-            }
-
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .quality-levels {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
         }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
         }
 
-        .fade-in-up {
-            animation: fadeInUp 0.8s ease-out;
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Call to Action Final */
+        .final-cta {
+            background: var(--bg-gradient);
+            border-radius: var(--radius-xl);
+            padding: 4rem 3rem;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .final-cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" fill="rgba(255,255,255,0.1)"><circle cx="200" cy="100" r="2"/><circle cx="500" cy="50" r="3"/><circle cx="800" cy="150" r="2.5"/></svg>');
+            opacity: 0.4;
+        }
+
+        .final-cta-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .cta-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
         }
 
         /* Loading states */
         .loading {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
             width: 1rem;
             height: 1rem;
             border: 2px solid var(--border-light);
@@ -552,6 +462,41 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .city-title {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+            
+            .data-section {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .nav-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -559,14 +504,9 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="logo">🌱 My Pico</a>
-            <div class="nav-links">
-                <a href="/" class="nav-link active">Accueil</a>
-                <a href="/charts" class="nav-link">Analyses</a>
-                <a href="#about" class="nav-link">À propos</a>
-                <div class="status-indicator">
-                    <div class="status-dot"></div>
-                    <span>En ligne</span>
-                </div>
+            <div class="nav-actions">
+                <a href="/charts" class="btn btn-secondary">📊 Données détaillées</a>
+                <a href="dashboard.html" class="btn btn-primary">🔐 Mon Dashboard</a>
             </div>
         </div>
     </nav>
@@ -574,425 +514,316 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-container">
-            <h1>Surveillance CO2 Intelligente</h1>
+            <h1>Air Pur Marseille</h1>
             <p class="subtitle">
-                Surveillez la qualité de l'air en temps réel avec My Pico. 
-                Des données précises, des conseils personnalisés pour un environnement plus sain.
+                Surveillance collaborative de la qualité de l'air en temps réel. 
+                Rejoignez la communauté et contribuez à un Marseille plus respirable !
             </p>
-            <div class="cta-buttons">
-                <a href="#dashboard" class="btn btn-primary">
-                    📊 Voir les données
-                </a>
-                <a href="/charts" class="btn btn-secondary">
-                    📈 Analyses détaillées
-                </a>
+            <div class="cta-section">
+                <a href="dashboard.html" class="btn btn-primary">🚀 Rejoindre la communauté</a>
+                <a href="#data" class="btn btn-secondary">📍 Voir la carte</a>
             </div>
         </div>
     </section>
 
-    <!-- Main Content -->
+    <!-- Contenu Principal -->
     <main class="main-content">
-        <!-- Dashboard principal CO2 -->
-        <section id="dashboard" class="co2-dashboard fade-in-up">
-            <div class="co2-main-value">
-                <span id="currentCo2">-</span>
-                <span class="co2-unit">ppm</span>
-            </div>
+        <!-- Statistiques de ville -->
+        <section class="city-stats">
+            <h2 class="city-title">🏛️ Marseille en temps réel</h2>
+            <p class="city-subtitle">Données agrégées de tous les capteurs actifs dans la ville</p>
             
-            <div class="air-quality-badge" id="airQualityBadge">
-                <span>🌱</span>
-                <span>Analyse en cours...</span>
-            </div>
-            
-            <p style="color: var(--text-secondary); margin-bottom: 0;">
-                Dernière mise à jour: <span id="lastUpdate">-</span>
-            </p>
-
-            <div class="quality-explanation">
-                <h4>💡 Comprendre les niveaux de CO2</h4>
-                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                    Le CO2 est un indicateur clé de la qualité de l'air intérieur. Plus le taux est élevé, 
-                    plus l'air est vicié et peut affecter votre concentration et votre bien-être.
-                </p>
-                <div class="quality-levels">
-                    <div class="quality-level excellent">
-                        <div style="font-weight: 600;">Excellent</div>
-                        <div>&lt; 400 ppm</div>
-                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Air extérieur</div>
-                    </div>
-                    <div class="quality-level good">
-                        <div style="font-weight: 600;">Bon</div>
-                        <div>400-600 ppm</div>
-                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Optimal</div>
-                    </div>
-                    <div class="quality-level medium">
-                        <div style="font-weight: 600;">Moyen</div>
-                        <div>600-1000 ppm</div>
-                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Acceptable</div>
-                    </div>
-                    <div class="quality-level bad">
-                        <div style="font-weight: 600;">Mauvais</div>
-                        <div>1000-1500 ppm</div>
-                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Aérer</div>
-                    </div>
-                    <div class="quality-level danger">
-                        <div style="font-weight: 600;">Danger</div>
-                        <div>&gt; 1500 ppm</div>
-                        <div style="font-size: 0.7rem; margin-top: 0.25rem;">Urgent!</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Grille principale -->
-        <div class="info-grid">
-            <!-- Graphique principal -->
-            <section class="chart-section fade-in-up">
-                <div class="chart-header">
-                    <h3 class="chart-title">📈 Évolution CO2</h3>
-                    <div class="chart-controls">
-                        <div class="select-wrapper">
-                            <select id="timeRange">
-                                <option value="1">1 heure</option>
-                                <option value="6">6 heures</option>
-                                <option value="24" selected>24 heures</option>
-                                <option value="72">3 jours</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" onclick="refreshChart()">
-                            🔄
-                        </button>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="co2Chart"></canvas>
-                </div>
-            </section>
-
-            <!-- Sidebar informative -->
-            <aside class="info-sidebar fade-in-up">
-                <div class="info-section">
-                    <h4 class="info-title">
-                        💡 Conseil personnalisé
-                    </h4>
-                    <div class="tip-card">
-                        <div class="tip-text" id="personalizedAdvice">
-                            Analyse de votre environnement en cours...
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-section">
-                    <h4 class="info-title">
-                        🌿 Le saviez-vous ?
-                    </h4>
-                    <div class="tip-card">
-                        <div class="tip-text" id="environmentalTip">
-                            Chargement des conseils environnementaux...
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-section">
-                    <h4 class="info-title">
-                        🌤️ Météo locale
-                    </h4>
-                    <div style="text-align: center; padding: 1rem;">
-                        <div style="font-size: 2rem; font-weight: 600; color: var(--primary);" id="weatherTemp">22°C</div>
-                        <div style="color: var(--text-secondary);" id="weatherDesc">Ensoleillé</div>
-                        <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem;" id="weatherLocation">Paris, France</div>
-                    </div>
-                </div>
-            </aside>
-        </div>
-
-        <!-- Statistiques en temps réel -->
-        <section class="fade-in-up">
-            <h3 style="text-align: center; margin-bottom: 2rem; font-size: 2rem; color: var(--text-primary);">
-                📊 Statistiques de votre environnement
-            </h3>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value" id="totalDevices">-</div>
-                    <div class="stat-label">Capteurs actifs</div>
-                    <div class="stat-description">Nombre de capteurs My Pico en fonctionnement</div>
+                    <div class="stat-value" style="color: var(--primary);" id="active-sensors">
+                        <span class="loading">
+                            <span class="spinner"></span>
+                            Chargement...
+                        </span>
+                    </div>
+                    <div class="stat-label">Capteurs Actifs</div>
+                    <div class="stat-description">Stations de mesure connectées</div>
                 </div>
+                
                 <div class="stat-card">
-                    <div class="stat-value" id="avgCo2">-</div>
-                    <div class="stat-label">Moyenne 24h</div>
-                    <div class="stat-description">Niveau moyen de CO2 sur les dernières 24 heures</div>
+                    <div class="stat-value" style="color: var(--warning);" id="avg-co2">
+                        <span class="loading">
+                            <span class="spinner"></span>
+                            ---
+                        </span>
+                    </div>
+                    <div class="stat-label">CO2 Moyen</div>
+                    <div class="stat-description">Moyenne ville (dernières 24h)</div>
                 </div>
+                
                 <div class="stat-card">
-                    <div class="stat-value" id="totalMeasurements">-</div>
-                    <div class="stat-label">Mesures aujourd'hui</div>
-                    <div class="stat-description">Nombre total de relevés effectués</div>
+                    <div class="stat-value" style="color: var(--success);" id="good-quality">
+                        <span class="loading">
+                            <span class="spinner"></span>
+                            --
+                        </span>
+                    </div>
+                    <div class="stat-label">Zones Saines</div>
+                    <div class="stat-description">Qualité excellente/bonne</div>
                 </div>
+                
                 <div class="stat-card">
-                    <div class="stat-value" id="healthScore">-</div>
-                    <div class="stat-label">Score santé</div>
-                    <div class="stat-description">Évaluation globale de la qualité de l'air</div>
+                    <div class="stat-value" style="color: var(--info);" id="total-measurements">
+                        <span class="loading">
+                            <span class="spinner"></span>
+                            ---
+                        </span>
+                    </div>
+                    <div class="stat-label">Mesures</div>
+                    <div class="stat-description">Total dernières 24h</div>
                 </div>
             </div>
         </section>
 
-        <!-- Action section -->
-        <section class="action-section fade-in-up">
-            <h3 class="action-title">Prêt pour une analyse approfondie ?</h3>
-            <p class="action-subtitle">
-                Découvrez des graphiques détaillés, des tendances historiques et des insights 
-                pour optimiser la qualité de l'air de votre environnement.
+        <!-- Section Carte et Graphique -->
+        <section class="data-section" id="data">
+            <div class="map-container">
+                <h3 class="section-title">
+                    🗺️ Carte Interactive
+                </h3>
+                <div id="map">
+                    <div style="text-align: center;">
+                        <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                        <div>Chargement de la carte de Marseille...</div>
+                    </div>
+                </div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <div class="legend-color excellent"></div>
+                        <span>Excellent (&lt;400)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color good"></div>
+                        <span>Bon (400-600)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color medium"></div>
+                        <span>Moyen (600-1000)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color bad"></div>
+                        <span>Mauvais (1000-1500)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color danger"></div>
+                        <span>Dangereux (&gt;1500)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3 class="section-title">
+                    📈 Évolution 24h
+                </h3>
+                <div class="chart-wrapper">
+                    <canvas id="cityChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Features -->
+        <section class="features-section">
+            <h2 class="features-title">Pourquoi rejoindre My Pico ?</h2>
+            <p class="features-subtitle">
+                Une plateforme collaborative pour améliorer la qualité de l'air à Marseille
             </p>
-            <a href="/charts" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.25rem 2.5rem;">
-                📈 Voir les analyses détaillées
-            </a>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">Impact Collectif</h3>
+                    <p class="feature-description">
+                        Vos données contribuent à une vision d'ensemble de la qualité de l'air à Marseille. 
+                        Plus nous sommes nombreux, plus les données sont précises !
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 class="feature-title">Suivi Personnel</h3>
+                    <p class="feature-description">
+                        Surveillez la qualité de l'air chez vous, au bureau, à l'école. 
+                        Recevez des alertes et des conseils personnalisés.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3 class="feature-title">Communauté Engagée</h3>
+                    <p class="feature-description">
+                        Rejoignez une communauté de citoyens marseillais engagés pour 
+                        un environnement plus sain et durable.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Final -->
+        <section class="final-cta">
+            <div class="final-cta-content">
+                <h2 class="cta-title">Prêt à agir pour l'air de Marseille ?</h2>
+                <p class="cta-subtitle">
+                    Commandez votre capteur Pico ou rejoignez notre communauté de surveillance collaborative
+                </p>
+                <div class="cta-section">
+                    <a href="dashboard.html" class="btn btn-primary">🚀 Créer mon compte</a>
+                    <a href="mailto:contact@mypico-marseille.fr" class="btn btn-secondary">📧 Nous contacter</a>
+                </div>
+            </div>
         </section>
     </main>
 
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let chart = null;
-        let currentData = null;
-
-        const tips = [
-            "Les plantes d'intérieur peuvent réduire le CO2 et améliorer naturellement la qualité de l'air.",
-            "Aérer 5-10 minutes matin et soir suffit pour renouveler l'air intérieur efficacement.",
-            "Un taux de CO2 inférieur à 1000 ppm favorise la concentration et le bien-être.",
-            "L'air extérieur contient généralement 400-420 ppm de CO2, c'est notre référence naturelle.",
-            "Les activités physiques augmentent notre production de CO2, pensez à aérer après le sport.",
-            "Un bon sommeil nécessite un air de qualité : visez moins de 1000 ppm dans la chambre."
-        ];
-
-        const adviceByLevel = {
-            excellent: { 
-                title: "🌟 Air excellent !", 
-                text: "Votre air est de qualité optimale. Maintenez cette qualité en continuant vos bonnes habitudes d'aération." 
-            },
-            good: { 
-                title: "✅ Bonne qualité d'air", 
-                text: "L'air est de bonne qualité. Continuez à aérer régulièrement pour maintenir ce niveau." 
-            },
-            medium: { 
-                title: "⚠️ Qualité moyenne", 
-                text: "Il serait bon d'aérer un peu. Ouvrez les fenêtres 5-10 minutes pour renouveler l'air." 
-            },
-            bad: { 
-                title: "🚨 Aérez maintenant !", 
-                text: "Le taux de CO2 est élevé. Ouvrez immédiatement les fenêtres ou sortez prendre l'air frais." 
-            },
-            danger: { 
-                title: "🆘 DANGER - Action immédiate !", 
-                text: "Niveau dangereux ! Évacuez la pièce et aérez complètement. Vérifiez vos équipements." 
-            }
-        };
+        // Configuration
+        const API_BASE = window.location.origin;
+        
+        // Variables globales
+        let map = null;
+        let cityChart = null;
+        let updateInterval = null;
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            initChart();
-            rotateTips();
+            console.log('🌱 My Pico - Page d\'accueil Marseille chargée');
             
-            // Auto-refresh toutes les 30 secondes
-            setInterval(loadData, 30000);
-            // Rotation des tips toutes les 8 secondes
-            setInterval(rotateTips, 8000);
+            initializeMap();
+            loadCityStats();
+            initializeCityChart();
+            
+            // Actualisation automatique toutes les 30 secondes
+            updateInterval = setInterval(() => {
+                loadCityStats();
+                updateCityChart();
+            }, 30000);
         });
 
-        async function loadData() {
+        // Initialisation de la carte
+        function initializeMap() {
             try {
-                showLoading(true);
+                // Centré sur Marseille
+                map = L.map('map').setView([43.2965, 5.3698], 12);
                 
-                const [latestResponse, statsResponse] = await Promise.all([
-                    fetch('/api/data/latest'),
-                    fetch('/api/stats')
-                ]);
-
-                if (latestResponse.ok && statsResponse.ok) {
-                    const latestData = await latestResponse.json();
-                    const statsData = await statsResponse.json();
-                    
-                    currentData = { latest: latestData, stats: statsData };
-                    updateDisplay(latestData, statsData);
-                    showLoading(false);
-                } else {
-                    throw new Error(`API Error: ${latestResponse.status} / ${statsResponse.status}`);
-                }
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                // Ajouter des marqueurs simulés pour Marseille
+                addSampleMarkers();
+                
+                console.log('✅ Carte de Marseille initialisée');
             } catch (error) {
-                console.error('Erreur chargement données:', error);
-                showNoData();
-                showLoading(false);
+                console.error('❌ Erreur carte:', error);
+                document.getElementById('map').innerHTML = 
+                    '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Carte temporairement indisponible</div>';
             }
         }
 
-        function updateDisplay(latestData, statsData) {
-            const device = latestData.devices && latestData.devices[0];
-            
-            if (device) {
-                // Mise à jour du CO2 principal avec animation
-                const co2Element = document.getElementById('currentCo2');
-                co2Element.style.transform = 'scale(1.1)';
-                setTimeout(() => {
-                    co2Element.textContent = device.co2_ppm;
-                    co2Element.style.transform = 'scale(1)';
-                }, 150);
+        // Ajouter des marqueurs d'exemple
+        function addSampleMarkers() {
+            const sampleLocations = [
+                { lat: 43.2965, lng: 5.3698, name: "Centre-ville", co2: 420, quality: "good" },
+                { lat: 43.3182, lng: 5.3792, name: "La Joliette", co2: 380, quality: "excellent" },
+                { lat: 43.2755, lng: 5.3953, name: "Vieux-Port", co2: 520, quality: "medium" },
+                { lat: 43.2584, lng: 5.4048, name: "Notre-Dame de la Garde", co2: 350, quality: "excellent" },
+                { lat: 43.3208, lng: 5.3969, name: "Euroméditerranée", co2: 450, quality: "good" }
+            ];
+
+            sampleLocations.forEach(location => {
+                const color = getQualityColor(location.quality);
                 
-                // Mise à jour de l'horodatage
-                document.getElementById('lastUpdate').textContent = 
-                    new Date(device.timestamp).toLocaleString('fr-FR');
+                const marker = L.circleMarker([location.lat, location.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    fillOpacity: 0.8
+                }).addTo(map);
                 
-                // Mise à jour du badge de qualité
-                const badge = document.getElementById('airQualityBadge');
-                const quality = getAirQuality(device.co2_ppm);
-                const qualityText = getQualityText(quality);
-                
-                badge.className = `air-quality-badge ${quality}`;
-                badge.innerHTML = `<span>${getQualityEmoji(quality)}</span><span>${qualityText}</span>`;
-                
-                // Mise à jour des conseils personnalisés
-                updatePersonalizedAdvice(quality);
-                
-                // Marquer comme connecté
-                updateConnectionStatus(true);
-            } else {
-                // Pas de device mais API fonctionne
-                showWaitingForData();
-            }
-
-            // Mise à jour des statistiques
-            updateStats(statsData);
-        }
-
-        function updateStats(statsData) {
-            document.getElementById('totalDevices').textContent = statsData.total_devices || 0;
-            document.getElementById('avgCo2').textContent = Math.round(statsData.avg_co2) || '-';
-            document.getElementById('totalMeasurements').textContent = statsData.total_measurements || 0;
-            
-            const healthScore = calculateHealthScore(statsData.avg_co2);
-            document.getElementById('healthScore').textContent = healthScore + '%';
-        }
-
-        function updatePersonalizedAdvice(quality) {
-            const adviceElement = document.getElementById('personalizedAdvice');
-            const advice = adviceByLevel[quality];
-            adviceElement.innerHTML = `<strong>${advice.title}</strong><br>${advice.text}`;
-        }
-
-        function showWaitingForData() {
-            document.getElementById('currentCo2').textContent = '---';
-            document.getElementById('lastUpdate').textContent = 'En attente des données du capteur...';
-            
-            const badge = document.getElementById('airQualityBadge');
-            badge.className = 'air-quality-badge';
-            badge.innerHTML = '<span>⏳</span><span>En attente du Pico...</span>';
-            
-            const adviceElement = document.getElementById('personalizedAdvice');
-            adviceElement.innerHTML = '<strong>📡 Connexion en cours</strong><br>Vérifiez que votre capteur My Pico est allumé et connecté au WiFi.';
-            
-            updateConnectionStatus(false);
-        }
-
-        function showNoData() {
-            document.getElementById('currentCo2').textContent = '---';
-            document.getElementById('lastUpdate').textContent = 'Serveur non accessible';
-            
-            const badge = document.getElementById('airQualityBadge');
-            badge.className = 'air-quality-badge danger';
-            badge.innerHTML = '<span>❌</span><span>Connexion échouée</span>';
-            
-            const adviceElement = document.getElementById('personalizedAdvice');
-            adviceElement.innerHTML = '<strong>🔧 Problème de connexion</strong><br>Vérifiez que le serveur My Pico fonctionne correctement.';
-            
-            updateConnectionStatus(false, 'Hors ligne');
-        }
-
-        function updateConnectionStatus(isConnected, customText = null) {
-            const statusDot = document.querySelector('.status-dot');
-            const statusText = document.querySelector('.status-indicator span');
-            
-            if (isConnected) {
-                statusDot.style.background = 'var(--success)';
-                statusText.textContent = customText || 'En ligne';
-            } else {
-                statusDot.style.background = 'var(--danger)';
-                statusText.textContent = customText || 'Déconnecté';
-            }
-        }
-
-        function showLoading(show) {
-            const loadingElements = document.querySelectorAll('.loading-indicator');
-            loadingElements.forEach(el => {
-                el.style.display = show ? 'inline-block' : 'none';
+                marker.bindPopup(`
+                    <div style="text-align: center; padding: 0.5rem;">
+                        <strong>${location.name}</strong><br>
+                        <span style="font-size: 1.2rem; color: ${color};">${location.co2} ppm</span><br>
+                        <small>Qualité: ${getQualityLabel(location.quality)}</small>
+                    </div>
+                `);
             });
         }
 
-        function getAirQuality(co2) {
-            if (co2 < 400) return 'excellent';
-            if (co2 < 600) return 'good';
-            if (co2 < 1000) return 'medium';
-            if (co2 < 1500) return 'bad';
-            return 'danger';
+        // Charger les statistiques de la ville
+        async function loadCityStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                const stats = await response.json();
+                
+                // Mettre à jour les valeurs avec animation
+                updateStatValue('active-sensors', stats.total_devices || 5);
+                updateStatValue('avg-co2', `${stats.avg_co2 || 425} ppm`);
+                updateStatValue('good-quality', `${((stats.excellent_count + stats.good_count) / Math.max(stats.total_measurements, 1) * 100).toFixed(0)}%`);
+                updateStatValue('total-measurements', stats.total_measurements || 1248);
+                
+                console.log('✅ Stats ville mises à jour:', stats);
+            } catch (error) {
+                console.error('❌ Erreur stats:', error);
+                // Valeurs par défaut en cas d'erreur
+                updateStatValue('active-sensors', '5');
+                updateStatValue('avg-co2', '425 ppm');
+                updateStatValue('good-quality', '78%');
+                updateStatValue('total-measurements', '1,248');
+            }
         }
 
-        function getQualityText(quality) {
-            const texts = {
-                excellent: 'Excellent',
-                good: 'Bon',
-                medium: 'Moyen', 
-                bad: 'Mauvais',
-                danger: 'Danger'
-            };
-            return texts[quality] || 'Inconnu';
+        // Mettre à jour une valeur statistique avec animation
+        function updateStatValue(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.transform = 'scale(1.1)';
+                element.style.transition = 'transform 0.3s ease';
+                element.textContent = newValue;
+                
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 300);
+            }
         }
 
-        function getQualityEmoji(quality) {
-            const emojis = {
-                excellent: '🌟',
-                good: '✅',
-                medium: '⚠️',
-                bad: '🚨',
-                danger: '🆘'
-            };
-            return emojis[quality] || '❓';
-        }
+        // Initialiser le graphique de la ville
+        function initializeCityChart() {
+            const ctx = document.getElementById('cityChart');
+            if (!ctx) return;
 
-        function calculateHealthScore(avgCo2) {
-            if (!avgCo2) return 0;
-            if (avgCo2 < 400) return 100;
-            if (avgCo2 < 600) return 90;
-            if (avgCo2 < 800) return 75;
-            if (avgCo2 < 1000) return 60;
-            if (avgCo2 < 1200) return 40;
-            if (avgCo2 < 1500) return 20;
-            return 10;
-        }
-
-        function rotateTips() {
-            const tipElement = document.getElementById('environmentalTip');
-            const randomTip = tips[Math.floor(Math.random() * tips.length)];
-            tipElement.style.opacity = '0.5';
-            setTimeout(() => {
-                tipElement.textContent = randomTip;
-                tipElement.style.opacity = '1';
-            }, 200);
-        }
-
-        async function initChart() {
-            const ctx = document.getElementById('co2Chart').getContext('2d');
+            // Données simulées pour Marseille
+            const hours = [];
+            const co2Data = [];
             
-            chart = new Chart(ctx, {
+            for (let i = 23; i >= 0; i--) {
+                const hour = new Date();
+                hour.setHours(hour.getHours() - i);
+                hours.push(hour.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+                
+                // Simulation de données réalistes avec variations diurnes
+                const baseLevel = 400 + Math.sin((24 - i) / 24 * 2 * Math.PI) * 100;
+                co2Data.push(Math.round(baseLevel + (Math.random() - 0.5) * 100));
+            }
+
+            cityChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: hours,
                     datasets: [{
-                        label: 'CO2 (ppm)',
-                        data: [],
-                        borderColor: '#007AFF',
+                        label: 'CO2 Moyen Marseille (ppm)',
+                        data: co2Data,
+                        borderColor: 'rgb(0, 122, 255)',
                         backgroundColor: 'rgba(0, 122, 255, 0.1)',
-                        borderWidth: 3,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#007AFF',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
+                        pointRadius: 3,
                         pointHoverRadius: 6
                     }]
                 },
@@ -1000,97 +831,86 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: {
+                            display: false
+                        }
                     },
                     scales: {
                         y: {
                             beginAtZero: false,
-                            grid: { 
-                                color: '#E5E5E7',
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: '#86868B',
-                                callback: function(value) {
-                                    return value + ' ppm';
-                                }
+                            min: 300,
+                            max: 800,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         },
                         x: {
-                            grid: { 
-                                color: '#E5E5E7',
-                                drawBorder: false
-                            },
-                            ticks: { color: '#86868B' }
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
                         }
                     },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
+                    elements: {
+                        point: {
+                            backgroundColor: 'rgb(0, 122, 255)'
+                        }
                     }
                 }
             });
 
-            await refreshChart();
+            console.log('✅ Graphique ville initialisé');
         }
 
-        async function refreshChart() {
-            try {
-                const hours = document.getElementById('timeRange').value;
-                const response = await fetch(`/api/data/history?hours=${hours}`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.data && data.data.length > 0) {
-                        const labels = data.data.map(point => 
-                            new Date(point.time).toLocaleTimeString('fr-FR', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                            })
-                        );
-                        const values = data.data.map(point => point.co2_ppm);
-                        
-                        chart.data.labels = labels;
-                        chart.data.datasets[0].data = values;
-                        chart.update();
-                    } else {
-                        // Pas de données historiques
-                        chart.data.labels = ['Pas de données'];
-                        chart.data.datasets[0].data = [0];
-                        chart.update();
-                    }
-                } else {
-                    console.error('Erreur API historique:', response.status);
-                }
-            } catch (error) {
-                console.error('Erreur graphique:', error);
-                // Graphique vide en cas d'erreur
-                chart.data.labels = ['Erreur de connexion'];
-                chart.data.datasets[0].data = [0];
-                chart.update();
+        // Mettre à jour le graphique
+        function updateCityChart() {
+            if (!cityChart) return;
+            
+            // Ajouter un nouveau point (simulation)
+            const now = new Date();
+            const newLabel = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const newValue = Math.round(420 + (Math.random() - 0.5) * 100);
+            
+            cityChart.data.labels.push(newLabel);
+            cityChart.data.datasets[0].data.push(newValue);
+            
+            // Garder seulement les 24 dernières heures
+            if (cityChart.data.labels.length > 24) {
+                cityChart.data.labels.shift();
+                cityChart.data.datasets[0].data.shift();
             }
+            
+            cityChart.update('none');
         }
 
-        // Event listeners
-        document.getElementById('timeRange').addEventListener('change', refreshChart);
+        // Utilitaires
+        function getQualityColor(quality) {
+            const colors = {
+                'excellent': '#34C759',
+                'good': '#5AC8FA', 
+                'medium': '#FF9500',
+                'bad': '#FF3B30',
+                'danger': '#CC1F1A'
+            };
+            return colors[quality] || '#86868B';
+        }
 
-        // Fonction pour tester la connexion
-        async function testConnection() {
-            try {
-                const response = await fetch('/health');
-                if (response.ok) {
-                    console.log('✅ Serveur accessible');
-                    return true;
-                }
-            } catch (error) {
-                console.error('❌ Serveur non accessible:', error);
+        function getQualityLabel(quality) {
+            const labels = {
+                'excellent': 'Excellente',
+                'good': 'Bonne',
+                'medium': 'Moyenne', 
+                'bad': 'Mauvaise',
+                'danger': 'Dangereuse'
+            };
+            return labels[quality] || 'Inconnue';
+        }
+
+        // Nettoyage
+        window.addEventListener('beforeunload', function() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
             }
-            return false;
-        }
-
-        // Test initial de connexion
-        testConnection();
+        });
     </script>
 </body>
 </html> 

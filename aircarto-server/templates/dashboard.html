@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pico - Mon Dashboard Personnel</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            /* Design System moderne */
+            --primary: #007AFF;
+            --primary-light: #5AC8FA;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --info: #5AC8FA;
+            
+            /* Backgrounds */
+            --bg-primary: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --bg-surface: #F8F9FA;
+            --bg-hover: #F5F5F7;
+            --bg-accent: rgba(0, 122, 255, 0.08);
+            --bg-gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            
+            /* Textes */
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-tertiary: #6E6E73;
+            
+            /* Bordures et ombres */
+            --border-light: #E5E5E7;
+            --border-medium: #D1D1D6;
+            --shadow-soft: 0 2px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-large: 0 16px 40px rgba(0, 0, 0, 0.15);
+            
+            /* Rayons */
+            --radius-small: 8px;
+            --radius-medium: 12px;
+            --radius-large: 20px;
+            --radius-xl: 28px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border-light);
+            object-fit: cover;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-medium);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #CC1F1A;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Page States */
+        .page-state {
+            display: none;
+        }
+
+        .page-state.active {
+            display: block;
+        }
+
+        /* Login State */
+        .login-container {
+            max-width: 400px;
+            margin: 4rem auto;
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            box-shadow: var(--shadow-large);
+            border: 1px solid var(--border-light);
+            text-align: center;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-input {
+            padding: 1rem;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-medium);
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        .divider {
+            margin: 2rem 0;
+            position: relative;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-light);
+        }
+
+        .divider span {
+            background: var(--bg-card);
+            padding: 0 1rem;
+        }
+
+        /* Dashboard State */
+        .dashboard-header {
+            background: var(--bg-gradient);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            margin-bottom: 3rem;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" fill="rgba(255,255,255,0.1)"><circle cx="200" cy="100" r="2"/><circle cx="500" cy="50" r="3"/><circle cx="800" cy="150" r="2.5"/></svg>');
+            opacity: 0.4;
+        }
+
+        .dashboard-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Devices Grid */
+        .devices-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .device-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-large);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .device-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .device-info h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .device-location {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .device-status {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-online {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--success);
+        }
+
+        .status-offline {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--danger);
+        }
+
+        .device-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .device-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        /* Add Device Card */
+        .add-device-card {
+            background: var(--bg-surface);
+            border: 2px dashed var(--border-medium);
+            border-radius: var(--radius-large);
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-device-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-accent);
+        }
+
+        .add-device-icon {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .add-device-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .add-device-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Loading */
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .devices-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .user-profile {
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                🌱 My Pico
+            </a>
+            <div class="nav-actions">
+                <div id="userProfile" class="user-profile" style="display: none;">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">Chargement...</div>
+                        <div class="user-email" id="userEmail">Chargement...</div>
+                    </div>
+                    <img id="userAvatar" class="user-avatar" src="/api/placeholder/40/40" alt="Avatar">
+                </div>
+                <button id="backToPublic" class="btn btn-secondary" onclick="goToPublicDashboard()">
+                    🌍 Vue publique
+                </button>
+                <button id="logoutBtn" class="btn btn-danger" onclick="logout()" style="display: none;">
+                    🚪 Déconnexion
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- État de chargement -->
+        <div id="loadingState" class="page-state loading-state active">
+            <div class="spinner"></div>
+            <h2>Chargement de votre dashboard...</h2>
+            <p>Vérification de votre authentification</p>
+        </div>
+
+        <!-- État de connexion -->
+        <div id="loginState" class="page-state">
+            <div class="login-container">
+                <h1 class="login-title">🔑 Connexion My Pico</h1>
+                <p class="login-subtitle">
+                    Connectez-vous pour accéder à vos capteurs et données personnelles
+                </p>
+
+                <!-- Connexion Google -->
+                <button id="googleSignIn" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    Continuer avec Google
+                </button>
+
+                <div class="divider">
+                    <span>ou</span>
+                </div>
+
+                <!-- Connexion Email -->
+                <form id="emailSignInForm" class="login-form">
+                    <input type="email" id="email" class="form-input" placeholder="Votre email" required>
+                    <input type="password" id="password" class="form-input" placeholder="Votre mot de passe" required>
+                    <button type="submit" class="btn btn-primary">
+                        📧 Se connecter
+                    </button>
+                </form>
+
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    Pas encore de compte ? 
+                    <a href="#" onclick="toggleAuthMode()" style="color: var(--primary); text-decoration: none;">
+                        Créer un compte
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- État du dashboard principal -->
+        <div id="dashboardState" class="page-state">
+            <!-- Header du dashboard -->
+            <div class="dashboard-header">
+                <div class="dashboard-content">
+                    <h1 class="dashboard-title">🏠 Mon Dashboard My Pico</h1>
+                    <p class="dashboard-subtitle">
+                        Gérez vos capteurs et surveillez la qualité de l'air en temps réel
+                    </p>
+                </div>
+            </div>
+
+            <!-- Section des appareils -->
+            <section class="devices-section">
+                <div class="section-header">
+                    <h2 class="section-title">📡 Mes Capteurs</h2>
+                    <button class="btn btn-primary" onclick="showAddDeviceModal()">
+                        ➕ Ajouter un capteur
+                    </button>
+                </div>
+
+                <div id="devicesGrid" class="devices-grid">
+                    <!-- Les appareils seront ajoutés dynamiquement -->
+                    <div class="add-device-card" onclick="showAddDeviceModal()">
+                        <div class="add-device-icon">📡</div>
+                        <h3 class="add-device-title">Ajouter votre premier Pico</h3>
+                        <p class="add-device-description">
+                            Entrez l'ID de votre capteur pour commencer à recevoir des données
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal d'ajout d'appareil -->
+    <div id="addDeviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">➕ Ajouter un Capteur My Pico</h2>
+                <button class="modal-close" onclick="closeAddDeviceModal()">✕</button>
+            </div>
+            
+            <form id="addDeviceForm" class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">ID du Capteur *</label>
+                    <input type="text" id="deviceId" class="form-input" 
+                           placeholder="Ex: PICO_001_ABC123" required>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        L'ID unique de votre capteur (visible sur l'écran du Pico)
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Nom du Capteur *</label>
+                    <input type="text" id="deviceName" class="form-input" 
+                           placeholder="Ex: Salon Principal" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Localisation *</label>
+                    <input type="text" id="deviceLocation" class="form-input" 
+                           placeholder="Ex: Appartement Marseille 13001" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Pièce</label>
+                    <select id="deviceRoom" class="form-input">
+                        <option value="">Sélectionner une pièce</option>
+                        <option value="salon">Salon</option>
+                        <option value="chambre">Chambre</option>
+                        <option value="bureau">Bureau</option>
+                        <option value="cuisine">Cuisine</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="sharePublicly"> 
+                        Partager les données publiquement
+                    </label>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        Contribuer aux statistiques publiques de Marseille (données anonymisées)
+                    </small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    🚀 Ajouter le Capteur
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, arrayUnion, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAl_i1UGJ1tVTEAkn8xhSbwe_iKk0eYryk",
+            authDomain: "my-pico-cf271.firebaseapp.com",
+            projectId: "my-pico-cf271",
+            storageBucket: "my-pico-cf271.firebasestorage.app",
+            messagingSenderId: "54768474260",
+            appId: "1:54768474260:web:fae83bd8869fc9e5a7fc81",
+            measurementId: "G-PC5DZ114DK"
+        };
+
+        // Initialiser Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Variables globales
+        let currentUser = null;
+        let userDevices = [];
+        let isSignUpMode = false;
+
+        // Écouter les changements d'authentification
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                showDashboard();
+                updateUserProfile(user);
+                loadUserDevices();
+            } else {
+                currentUser = null;
+                showLogin();
+            }
+            hideLoading();
+        });
+
+        // Fonctions d'authentification
+        window.signInWithGoogle = async function() {
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                await createUserProfile(result.user);
+            } catch (error) {
+                console.error('Erreur connexion Google:', error);
+                showError('Erreur lors de la connexion avec Google');
+            }
+        };
+
+        window.signInWithEmail = async function(email, password) {
+            try {
+                let result;
+                if (isSignUpMode) {
+                    result = await createUserWithEmailAndPassword(auth, email, password);
+                    await createUserProfile(result.user);
+                } else {
+                    result = await signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                console.error('Erreur connexion email:', error);
+                showError(getAuthErrorMessage(error.code));
+            }
+        };
+
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error('Erreur déconnexion:', error);
+                showError('Erreur lors de la déconnexion');
+            }
+        };
+
+        // Gestion des profils utilisateur
+        async function createUserProfile(user) {
+            try {
+                const userRef = doc(db, 'users', user.uid);
+                await setDoc(userRef, {
+                    profile: {
+                        email: user.email,
+                        displayName: user.displayName || 'Utilisateur My Pico',
+                        photoURL: user.photoURL || '',
+                        createdAt: serverTimestamp(),
+                        lastLoginAt: serverTimestamp()
+                    },
+                    devices: [],
+                    permissions: {
+                        canViewPublicData: true
+                    }
+                }, { merge: true });
+            } catch (error) {
+                console.error('Erreur création profil:', error);
+            }
+        }
+
+        function updateUserProfile(user) {
+            document.getElementById('userName').textContent = user.displayName || 'Utilisateur';
+            document.getElementById('userEmail').textContent = user.email;
+            
+            if (user.photoURL) {
+                document.getElementById('userAvatar').src = user.photoURL;
+            }
+            
+            document.getElementById('userProfile').style.display = 'flex';
+            document.getElementById('logoutBtn').style.display = 'inline-flex';
+        }
+
+        // Gestion des appareils
+        async function loadUserDevices() {
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    userDevices = userData.devices || [];
+                    await loadDevicesDetails();
+                    renderDevices();
+                }
+            } catch (error) {
+                console.error('Erreur chargement appareils:', error);
+                showError('Erreur lors du chargement de vos appareils');
+            }
+        }
+
+        async function loadDevicesDetails() {
+            const devicesPromises = userDevices.map(async (deviceId) => {
+                try {
+                    const deviceRef = doc(db, 'devices', deviceId);
+                    const deviceSnap = await getDoc(deviceRef);
+                    
+                    if (deviceSnap.exists()) {
+                        return { id: deviceId, ...deviceSnap.data() };
+                    }
+                } catch (error) {
+                    console.error(`Erreur chargement device ${deviceId}:`, error);
+                }
+                return null;
+            });
+
+            const devicesData = await Promise.all(devicesPromises);
+            userDevices = devicesData.filter(device => device !== null);
+        }
+
+        function renderDevices() {
+            const devicesGrid = document.getElementById('devicesGrid');
+            
+            // Garder le bouton d'ajout
+            const addButton = devicesGrid.querySelector('.add-device-card');
+            devicesGrid.innerHTML = '';
+            
+            // Ajouter les appareils existants
+            userDevices.forEach(device => {
+                const deviceCard = createDeviceCard(device);
+                devicesGrid.appendChild(deviceCard);
+            });
+            
+            // Remettre le bouton d'ajout à la fin
+            devicesGrid.appendChild(addButton);
+        }
+
+        function createDeviceCard(device) {
+            const card = document.createElement('div');
+            card.className = 'device-card';
+            card.innerHTML = `
+                <div class="device-header">
+                    <div class="device-info">
+                        <h3>${device.info?.name || 'Capteur My Pico'}</h3>
+                        <div class="device-location">${device.info?.location?.address || 'Localisation non définie'}</div>
+                    </div>
+                    <div class="device-status ${device.info?.status === 'online' ? 'status-online' : 'status-offline'}">
+                        ${device.info?.status === 'online' ? '🟢 En ligne' : '🔴 Hors ligne'}
+                    </div>
+                </div>
+                
+                <div class="device-metrics">
+                    <div class="metric">
+                        <div class="metric-value">---</div>
+                        <div class="metric-label">CO2 Actuel</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">---</div>
+                        <div class="metric-label">Dernière MAJ</div>
+                    </div>
+                </div>
+                
+                <div class="device-actions">
+                    <button class="btn btn-primary btn-small" onclick="viewDevice('${device.id}')">
+                        📊 Voir les données
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="configureDevice('${device.id}')">
+                        ⚙️ Configurer
+                    </button>
+                    <button class="btn btn-danger btn-small" onclick="removeDevice('${device.id}')">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            `;
+            return card;
+        }
+
+        // Gestion des modales
+        window.showAddDeviceModal = function() {
+            document.getElementById('addDeviceModal').classList.add('active');
+        };
+
+        window.closeAddDeviceModal = function() {
+            document.getElementById('addDeviceModal').classList.remove('active');
+            document.getElementById('addDeviceForm').reset();
+        };
+
+        window.addDevice = async function(deviceData) {
+            try {
+                const deviceRef = doc(db, 'devices', deviceData.deviceId);
+                
+                // Créer le document de l'appareil
+                await setDoc(deviceRef, {
+                    info: {
+                        deviceId: deviceData.deviceId,
+                        name: deviceData.name,
+                        type: 'pico-co2',
+                        owner: currentUser.uid,
+                        location: {
+                            address: deviceData.location,
+                            room: deviceData.room,
+                            indoor: true
+                        },
+                        isPublic: deviceData.sharePublicly,
+                        createdAt: serverTimestamp(),
+                        lastSeen: null,
+                        status: 'offline'
+                    },
+                    settings: {
+                        alertThresholds: {
+                            warning: 1000,
+                            danger: 1500
+                        },
+                        measurementInterval: 5,
+                        sharePublicly: deviceData.sharePublicly
+                    },
+                    calibration: {
+                        lastCalibration: null,
+                        calibrationOffset: 0,
+                        calibrationNote: ''
+                    }
+                });
+
+                // Ajouter l'appareil à la liste de l'utilisateur
+                const userRef = doc(db, 'users', currentUser.uid);
+                await updateDoc(userRef, {
+                    devices: arrayUnion(deviceData.deviceId)
+                });
+
+                // Recharger les appareils
+                await loadUserDevices();
+                closeAddDeviceModal();
+                showSuccess('Capteur ajouté avec succès !');
+                
+            } catch (error) {
+                console.error('Erreur ajout appareil:', error);
+                showError('Erreur lors de l\'ajout du capteur');
+            }
+        };
+
+        // Fonctions d'interface
+        function showLogin() {
+            setPageState('loginState');
+        }
+
+        function showDashboard() {
+            setPageState('dashboardState');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').classList.remove('active');
+        }
+
+        function setPageState(stateId) {
+            document.querySelectorAll('.page-state').forEach(state => {
+                state.classList.remove('active');
+            });
+            document.getElementById(stateId).classList.add('active');
+        }
+
+        window.toggleAuthMode = function() {
+            isSignUpMode = !isSignUpMode;
+            const form = document.getElementById('emailSignInForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            
+            if (isSignUpMode) {
+                submitBtn.innerHTML = '📧 Créer le compte';
+                document.querySelector('.login-title').textContent = '🚀 Créer un Compte';
+                document.querySelector('.login-subtitle').textContent = 'Rejoignez la communauté My Pico';
+            } else {
+                submitBtn.innerHTML = '📧 Se connecter';
+                document.querySelector('.login-title').textContent = '🔑 Connexion My Pico';
+                document.querySelector('.login-subtitle').textContent = 'Connectez-vous pour accéder à vos capteurs';
+            }
+        };
+
+        window.goToPublicDashboard = function() {
+            window.location.href = '/';
+        };
+
+        window.viewDevice = function(deviceId) {
+            window.location.href = `/device/${deviceId}`;
+        };
+
+        window.configureDevice = function(deviceId) {
+            // TODO: Implémenter la configuration d'appareil
+            showInfo('Configuration d\'appareil à venir !');
+        };
+
+        window.removeDevice = async function(deviceId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce capteur ?')) {
+                try {
+                    // TODO: Implémenter la suppression
+                    showInfo('Suppression d\'appareil à implémenter');
+                } catch (error) {
+                    showError('Erreur lors de la suppression');
+                }
+            }
+        };
+
+        // Event listeners
+        document.getElementById('googleSignIn').addEventListener('click', signInWithGoogle);
+        
+        document.getElementById('emailSignInForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmail(email, password);
+        });
+
+        document.getElementById('addDeviceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const deviceData = {
+                deviceId: document.getElementById('deviceId').value,
+                name: document.getElementById('deviceName').value,
+                location: document.getElementById('deviceLocation').value,
+                room: document.getElementById('deviceRoom').value,
+                sharePublicly: document.getElementById('sharePublicly').checked
+            };
+            addDevice(deviceData);
+        });
+
+        // Utilitaires
+        function getAuthErrorMessage(errorCode) {
+            const messages = {
+                'auth/user-not-found': 'Aucun compte trouvé avec cette adresse email',
+                'auth/wrong-password': 'Mot de passe incorrect',
+                'auth/email-already-in-use': 'Cette adresse email est déjà utilisée',
+                'auth/weak-password': 'Le mot de passe doit contenir au moins 6 caractères',
+                'auth/invalid-email': 'Adresse email invalide'
+            };
+            return messages[errorCode] || 'Erreur d\'authentification';
+        }
+
+        function showError(message) {
+            showNotification(message, 'error');
+        }
+
+        function showSuccess(message) {
+            showNotification(message, 'success');
+        }
+
+        function showInfo(message) {
+            showNotification(message, 'info');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            const colors = {
+                error: 'var(--danger)',
+                success: 'var(--success)',
+                info: 'var(--info)'
+            };
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: ${colors[type]};
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: var(--radius-medium);
+                box-shadow: var(--shadow-large);
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

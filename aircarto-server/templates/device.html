@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pico - Capteur Détaillé</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            /* Design System moderne */
+            --primary: #007AFF;
+            --primary-light: #5AC8FA;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            --info: #5AC8FA;
+            
+            /* Backgrounds */
+            --bg-primary: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --bg-surface: #F8F9FA;
+            --bg-hover: #F5F5F7;
+            --bg-accent: rgba(0, 122, 255, 0.08);
+            --bg-gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            
+            /* Textes */
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-tertiary: #6E6E73;
+            
+            /* Bordures et ombres */
+            --border-light: #E5E5E7;
+            --border-medium: #D1D1D6;
+            --shadow-soft: 0 2px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-large: 0 16px 40px rgba(0, 0, 0, 0.15);
+            
+            /* Rayons */
+            --radius-small: 8px;
+            --radius-medium: 12px;
+            --radius-large: 20px;
+            --radius-xl: 28px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-medium);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--bg-gradient);
+            color: white;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Device Header */
+        .device-header {
+            background: var(--bg-gradient);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            margin-bottom: 3rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" fill="rgba(255,255,255,0.1)"><circle cx="200" cy="100" r="2"/><circle cx="500" cy="50" r="3"/><circle cx="800" cy="150" r="2.5"/></svg>');
+            opacity: 0.4;
+        }
+
+        .device-header-content {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .device-info h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .device-location {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .device-meta {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .device-status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            border-radius: var(--radius-large);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .status-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-label {
+            opacity: 0.9;
+        }
+
+        /* Current CO2 Display */
+        .co2-current {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            text-align: center;
+        }
+
+        .co2-value {
+            font-size: 5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .co2-unit {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .quality-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 1rem 0;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .excellent { background: linear-gradient(135deg, var(--success) 0%, #28A745 100%); color: white; }
+        .good { background: linear-gradient(135deg, var(--info) 0%, #17A2B8 100%); color: white; }
+        .medium { background: linear-gradient(135deg, var(--warning) 0%, #FD7E14 100%); color: white; }
+        .bad { background: linear-gradient(135deg, var(--danger) 0%, #DC3545 100%); color: white; }
+        .danger { background: linear-gradient(135deg, #CC1F1A 0%, #A71E1E 100%); color: white; }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-large);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .select-wrapper select {
+            appearance: none;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-small);
+            padding: 0.5rem 2rem 0.5rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        .stats-card .chart-container {
+            height: 250px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-large);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Data Table */
+        .data-table-section {
+            background: var(--bg-card);
+            border-radius: var(--radius-large);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            margin-bottom: 3rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table th {
+            background: var(--bg-surface);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .quality-cell {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Loading */
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-header-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .co2-value {
+                font-size: 4rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                🌱 My Pico
+            </a>
+            <div class="nav-actions">
+                <button class="btn btn-secondary" onclick="goBack()">
+                    ← Retour au dashboard
+                </button>
+                <button class="btn btn-primary" onclick="refreshData()">
+                    🔄 Actualiser
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- État de chargement -->
+        <div id="loadingState" class="loading-state">
+            <div class="spinner"></div>
+            <h2>Chargement des données du capteur...</h2>
+            <p>Récupération des informations et des mesures</p>
+        </div>
+
+        <!-- Contenu principal -->
+        <div id="deviceContent" style="display: none;">
+            <!-- Header du capteur -->
+            <div class="device-header">
+                <div class="device-header-content">
+                    <div class="device-info">
+                        <h1 id="deviceName">Capteur My Pico</h1>
+                        <div class="device-location" id="deviceLocation">Localisation en cours...</div>
+                        <div class="device-meta">
+                            <div>ID: <span id="deviceId">-</span></div>
+                            <div>Propriétaire: <span id="deviceOwner">-</span></div>
+                            <div>Dernière activité: <span id="lastSeen">-</span></div>
+                        </div>
+                    </div>
+                    <div class="device-status">
+                        <div class="status-value" id="deviceStatus">🔴</div>
+                        <div class="status-label">État</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Affichage CO2 principal -->
+            <div class="co2-current">
+                <div class="co2-value" id="currentCO2">
+                    <span>---</span>
+                    <span class="co2-unit">ppm</span>
+                </div>
+                <div class="quality-badge" id="qualityBadge">
+                    <span>⏳</span>
+                    <span>Analyse en cours...</span>
+                </div>
+                <p style="color: var(--text-secondary);">
+                    Dernière mesure: <span id="lastMeasurement">En attente...</span>
+                </p>
+            </div>
+
+            <!-- Statistiques rapides -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="avgCO2">---</div>
+                    <div class="stat-label">Moyenne 24h</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="minCO2">---</div>
+                    <div class="stat-label">Minimum</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="maxCO2">---</div>
+                    <div class="stat-label">Maximum</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="measurementCount">---</div>
+                    <div class="stat-label">Mesures aujourd'hui</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="qualityScore">---</div>
+                    <div class="stat-label">Score qualité</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="trendIndicator">---</div>
+                    <div class="stat-label">Tendance</div>
+                </div>
+            </div>
+
+            <!-- Graphiques -->
+            <div class="charts-grid">
+                <!-- Graphique principal évolution -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">📈 Évolution CO2</h3>
+                        <div class="chart-controls">
+                            <div class="select-wrapper">
+                                <select id="timeRange">
+                                    <option value="1">1 heure</option>
+                                    <option value="6">6 heures</option>
+                                    <option value="24" selected>24 heures</option>
+                                    <option value="72">3 jours</option>
+                                    <option value="168">1 semaine</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Graphique distribution -->
+                <div class="chart-card stats-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">📊 Distribution</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des données récentes -->
+            <div class="data-table-section">
+                <h3 class="chart-title">📋 Relevés Récents</h3>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Horodatage</th>
+                                <th>CO2 (ppm)</th>
+                                <th>Qualité</th>
+                                <th>Variation</th>
+                                <th>Température</th>
+                                <th>Humidité</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-secondary);">
+                                    Chargement des données récentes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAl_i1UGJ1tVTEAkn8xhSbwe_iKk0eYryk",
+            authDomain: "my-pico-cf271.firebaseapp.com",
+            projectId: "my-pico-cf271",
+            storageBucket: "my-pico-cf271.firebasestorage.app",
+            messagingSenderId: "54768474260",
+            appId: "1:54768474260:web:fae83bd8869fc9e5a7fc81",
+            measurementId: "G-PC5DZ114DK"
+        };
+
+        // Initialiser Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Variables globales
+        let currentUser = null;
+        let deviceId = null;
+        let deviceData = null;
+        let measurementsData = [];
+        let evolutionChart = null;
+        let distributionChart = null;
+        let measurementsListener = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            deviceId = getDeviceIdFromURL();
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    loadDeviceData();
+                } else {
+                    // Rediriger vers la connexion
+                    window.location.href = '/dashboard';
+                }
+            });
+
+            initCharts();
+            setupEventListeners();
+        });
+
+        function getDeviceIdFromURL() {
+            // Extraire l'ID du device depuis l'URL
+            const path = window.location.pathname;
+            const parts = path.split('/');
+            return parts[parts.length - 1];
+        }
+
+        async function loadDeviceData() {
+            try {
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('deviceContent').style.display = 'none';
+
+                // Charger les informations du device
+                const deviceRef = doc(db, 'devices', deviceId);
+                const deviceSnap = await getDoc(deviceRef);
+
+                if (deviceSnap.exists()) {
+                    deviceData = { id: deviceId, ...deviceSnap.data() };
+                    
+                    // Vérifier que l'utilisateur a accès à ce device
+                    if (deviceData.info.owner !== currentUser.uid && !deviceData.info.isPublic) {
+                        showError('Vous n\'avez pas accès à ce capteur');
+                        return;
+                    }
+
+                    updateDeviceInfo();
+                    await loadMeasurements();
+                    startRealTimeUpdates();
+                    
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('deviceContent').style.display = 'block';
+                } else {
+                    showError('Capteur non trouvé');
+                }
+            } catch (error) {
+                console.error('Erreur chargement device:', error);
+                showError('Erreur lors du chargement du capteur');
+            }
+        }
+
+        function updateDeviceInfo() {
+            document.getElementById('deviceName').textContent = deviceData.info.name || 'Capteur My Pico';
+            document.getElementById('deviceLocation').textContent = deviceData.info.location.address || 'Localisation non définie';
+            document.getElementById('deviceId').textContent = deviceData.id;
+            document.getElementById('deviceOwner').textContent = currentUser.email;
+            
+            const lastSeen = deviceData.info.lastSeen;
+            if (lastSeen && lastSeen.toDate) {
+                document.getElementById('lastSeen').textContent = lastSeen.toDate().toLocaleString('fr-FR');
+            } else {
+                document.getElementById('lastSeen').textContent = 'Jamais connecté';
+            }
+
+            const status = deviceData.info.status;
+            const statusElement = document.getElementById('deviceStatus');
+            if (status === 'online') {
+                statusElement.textContent = '🟢 En ligne';
+                statusElement.style.color = 'var(--success)';
+            } else {
+                statusElement.textContent = '🔴 Hors ligne';
+                statusElement.style.color = 'var(--danger)';
+            }
+        }
+
+        async function loadMeasurements() {
+            try {
+                const hours = parseInt(document.getElementById('timeRange').value);
+                const startTime = new Date();
+                startTime.setHours(startTime.getHours() - hours);
+
+                const measurementsRef = collection(db, 'measurements', deviceId, 'data');
+                const q = query(
+                    measurementsRef,
+                    where('timestamp', '>=', startTime),
+                    orderBy('timestamp', 'desc'),
+                    limit(1000)
+                );
+
+                const snapshot = await getDocs(q);
+                measurementsData = [];
+                
+                snapshot.forEach((doc) => {
+                    measurementsData.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Trier par timestamp croissant pour les graphiques
+                measurementsData.sort((a, b) => a.timestamp - b.timestamp);
+
+                updateCurrentDisplay();
+                updateStats();
+                updateCharts();
+                updateDataTable();
+
+            } catch (error) {
+                console.error('Erreur chargement mesures:', error);
+                showError('Erreur lors du chargement des mesures');
+            }
+        }
+
+        function startRealTimeUpdates() {
+            if (measurementsListener) {
+                measurementsListener();
+            }
+
+            const measurementsRef = collection(db, 'measurements', deviceId, 'data');
+            const q = query(
+                measurementsRef,
+                orderBy('timestamp', 'desc'),
+                limit(1)
+            );
+
+            measurementsListener = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const newMeasurement = { id: change.doc.id, ...change.doc.data() };
+                        
+                        // Ajouter la nouvelle mesure et maintenir l'ordre
+                        measurementsData.push(newMeasurement);
+                        measurementsData.sort((a, b) => a.timestamp - b.timestamp);
+                        
+                        updateCurrentDisplay();
+                        updateStats();
+                        updateCharts();
+                        updateDataTable();
+                    }
+                });
+            });
+        }
+
+        function updateCurrentDisplay() {
+            if (measurementsData.length === 0) {
+                document.getElementById('currentCO2').innerHTML = '<span>---</span><span class="co2-unit">ppm</span>';
+                document.getElementById('qualityBadge').innerHTML = '<span>⏳</span><span>Aucune donnée</span>';
+                document.getElementById('lastMeasurement').textContent = 'Aucune mesure';
+                return;
+            }
+
+            const latest = measurementsData[measurementsData.length - 1];
+            const co2Value = latest.co2_ppm;
+            const quality = getAirQuality(co2Value);
+
+            // Mise à jour avec animation
+            const co2Element = document.getElementById('currentCO2');
+            co2Element.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                co2Element.innerHTML = `<span style="color: ${getQualityColor(quality)}">${co2Value}</span><span class="co2-unit">ppm</span>`;
+                co2Element.style.transform = 'scale(1)';
+            }, 150);
+
+            // Badge de qualité
+            const badge = document.getElementById('qualityBadge');
+            badge.className = `quality-badge ${quality}`;
+            badge.innerHTML = `<span>${getQualityEmoji(quality)}</span><span>${getQualityText(quality)}</span>`;
+
+            // Dernière mesure
+            document.getElementById('lastMeasurement').textContent = 
+                latest.timestamp.toDate ? latest.timestamp.toDate().toLocaleString('fr-FR') : 'Maintenant';
+        }
+
+        function updateStats() {
+            if (measurementsData.length === 0) return;
+
+            const values = measurementsData.map(m => m.co2_ppm);
+            const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+
+            document.getElementById('avgCO2').textContent = avg + ' ppm';
+            document.getElementById('minCO2').textContent = min + ' ppm';
+            document.getElementById('maxCO2').textContent = max + ' ppm';
+            document.getElementById('measurementCount').textContent = measurementsData.length;
+
+            const qualityScore = calculateQualityScore(values);
+            document.getElementById('qualityScore').textContent = qualityScore + '%';
+
+            const trend = calculateTrend(values);
+            const trendElement = document.getElementById('trendIndicator');
+            trendElement.textContent = trend.text;
+            trendElement.style.color = trend.color;
+        }
+
+        function initCharts() {
+            // Graphique d'évolution
+            const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
+            evolutionChart = new Chart(evolutionCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CO2 (ppm)',
+                        data: [],
+                        borderColor: '#007AFF',
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 2,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: { display: true, text: 'CO2 (ppm)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Heure' }
+                        }
+                    }
+                }
+            });
+
+            // Graphique de distribution
+            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+            distributionChart = new Chart(distributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Excellent', 'Bon', 'Moyen', 'Mauvais', 'Danger'],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#34C759', '#5AC8FA', '#FF9500', '#FF3B30', '#CC1F1A'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { usePointStyle: true, padding: 10, font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (measurementsData.length === 0) return;
+
+            // Graphique d'évolution
+            const labels = measurementsData.map(m => 
+                m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('fr-FR', { 
+                    hour: '2-digit', minute: '2-digit' 
+                }) : 'N/A'
+            );
+            const values = measurementsData.map(m => m.co2_ppm);
+
+            evolutionChart.data.labels = labels;
+            evolutionChart.data.datasets[0].data = values;
+            evolutionChart.update();
+
+            // Graphique de distribution
+            const distribution = [
+                values.filter(v => v < 400).length,
+                values.filter(v => v >= 400 && v < 600).length,
+                values.filter(v => v >= 600 && v < 1000).length,
+                values.filter(v => v >= 1000 && v < 1500).length,
+                values.filter(v => v >= 1500).length
+            ];
+
+            distributionChart.data.datasets[0].data = distribution;
+            distributionChart.update();
+        }
+
+        function updateDataTable() {
+            const tableBody = document.getElementById('dataTableBody');
+            
+            if (measurementsData.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">Aucune donnée disponible</td></tr>';
+                return;
+            }
+
+            const recentData = measurementsData.slice(-20).reverse();
+            
+            tableBody.innerHTML = recentData.map(measurement => {
+                const timestamp = measurement.timestamp.toDate ? 
+                    measurement.timestamp.toDate().toLocaleString('fr-FR') : 'N/A';
+                const quality = getAirQuality(measurement.co2_ppm);
+                const qualityText = getQualityText(quality);
+                
+                return `
+                    <tr>
+                        <td>${timestamp}</td>
+                        <td><strong>${measurement.co2_ppm}</strong></td>
+                        <td><span class="quality-cell ${quality}">${qualityText}</span></td>
+                        <td>-</td>
+                        <td>${measurement.temperature || '-'}</td>
+                        <td>${measurement.humidity || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function setupEventListeners() {
+            document.getElementById('timeRange').addEventListener('change', loadMeasurements);
+        }
+
+        // Fonctions utilitaires
+        function getAirQuality(co2) {
+            if (co2 < 400) return 'excellent';
+            if (co2 < 600) return 'good';
+            if (co2 < 1000) return 'medium';
+            if (co2 < 1500) return 'bad';
+            return 'danger';
+        }
+
+        function getQualityColor(quality) {
+            const colors = {
+                'excellent': '#34C759',
+                'good': '#5AC8FA',
+                'medium': '#FF9500',
+                'bad': '#FF3B30',
+                'danger': '#CC1F1A'
+            };
+            return colors[quality] || '#86868B';
+        }
+
+        function getQualityText(quality) {
+            const texts = {
+                'excellent': 'Excellent',
+                'good': 'Bon',
+                'medium': 'Moyen',
+                'bad': 'Mauvais',
+                'danger': 'Danger'
+            };
+            return texts[quality] || 'Inconnu';
+        }
+
+        function getQualityEmoji(quality) {
+            const emojis = {
+                'excellent': '🌟',
+                'good': '✅',
+                'medium': '⚠️',
+                'bad': '🚨',
+                'danger': '🆘'
+            };
+            return emojis[quality] || '❓';
+        }
+
+        function calculateQualityScore(values) {
+            if (values.length === 0) return 0;
+            
+            const total = values.length;
+            const excellent = values.filter(v => v < 400).length;
+            const good = values.filter(v => v >= 400 && v < 600).length;
+            const medium = values.filter(v => v >= 600 && v < 1000).length;
+            const bad = values.filter(v => v >= 1000 && v < 1500).length;
+            const danger = values.filter(v => v >= 1500).length;
+
+            return Math.round((excellent * 100 + good * 80 + medium * 60 + bad * 40 + danger * 20) / total);
+        }
+
+        function calculateTrend(values) {
+            if (values.length < 2) return { text: 'Stable', color: 'var(--text-secondary)' };
+            
+            const recent = values.slice(-10);
+            const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+            const older = values.slice(-20, -10);
+            
+            if (older.length === 0) return { text: 'Stable', color: 'var(--text-secondary)' };
+            
+            const oldAvg = older.reduce((a, b) => a + b, 0) / older.length;
+            const diff = avg - oldAvg;
+            
+            if (Math.abs(diff) < 50) return { text: 'Stable', color: 'var(--text-secondary)' };
+            
+            return diff > 0 ? 
+                { text: '↗️ Hausse', color: 'var(--danger)' } : 
+                { text: '↘️ Baisse', color: 'var(--success)' };
+        }
+
+        // Fonctions globales
+        window.goBack = function() {
+            window.location.href = '/dashboard';
+        };
+
+        window.refreshData = function() {
+            loadMeasurements();
+        };
+
+        function showError(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: var(--danger);
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: var(--radius-medium);
+                box-shadow: var(--shadow-large);
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        // Nettoyage lors de la fermeture
+        window.addEventListener('beforeunload', () => {
+            if (measurementsListener) {
+                measurementsListener();
+            }
+        });
+    </script>
+</body>
+</html>
