@@ -616,7 +616,7 @@ def connect_wifi(ssid=None, password=None):
         # Test de connectivité Internet
         print("🔍 Test de connectivité Internet...")
         if mascot:
-            mascot.draw_config_screen("internet_test", "Test Internet", "Vérification...")
+            mascot.draw_internet_test_screen()
         else:
             display_status("Test Internet", "Vérification...")
         
@@ -631,10 +631,10 @@ def connect_wifi(ssid=None, password=None):
             save_config(config)
             
             if mascot:
-                mascot.draw_config_screen("wifi_success", "WiFi + Internet OK!", ip)
+                mascot.draw_config_screen("wifi_success", "WiFi + Internet OK!")
                 time.sleep(2)
             else:
-                display_status("WiFi + Internet OK", ip)
+                display_status("WiFi + Internet OK", "Connecte")
                 time.sleep(2)
             
             return True
@@ -669,17 +669,13 @@ def start_configuration_mode():
     
     print("📡 Mode configuration - Premier boot")
     
-    # Affichage des instructions de configuration
+    # Affichage simple de la configuration
     if mascot:
         mascot.draw_config_screen("initial_setup", "Configuration", "Première utilisation")
-        time.sleep(3)
-        mascot.draw_config_screen("connect_instructions", "Connectez-vous à:", WEBSITE_URL)
         time.sleep(5)
     else:
         display_status("Configuration", "Premier boot")
-        time.sleep(2)
-        display_status("Connectez-vous à:", WEBSITE_URL)
-        time.sleep(3)
+        time.sleep(5)
     
     # Créer point d'accès
     ap = network.WLAN(network.AP_IF)
@@ -696,11 +692,8 @@ def start_configuration_mode():
     
     ap_mode = True
 
-    # Afficher les infos de connexion
-    if mascot:
-        mascot.draw_config_screen("show_ap_info", f"WiFi: {AP_SSID}", f"Page: {ip}")
-    else:
-        display_status(f"WiFi: {AP_SSID}", f"Page: {ip}")
+    # Garder l'écran de configuration simple
+    # (pas d'affichage d'IP ou autres infos parasites)
     
     return ap, ip
 
