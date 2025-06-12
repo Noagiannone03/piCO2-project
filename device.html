@@ -1049,18 +1049,32 @@
                             air_quality: rawData.fields.air_quality?.stringValue,
                             timestamp: rawData.fields.timestamp?.timestampValue ? 
                                      { toDate: () => new Date(rawData.fields.timestamp.timestampValue) } : null,
+                            processedTimestamp: rawData.fields.timestamp?.timestampValue ? 
+                                              new Date(rawData.fields.timestamp.timestampValue) : null,
                             temperature: parseFloat(rawData.fields.temperature?.doubleValue),
                             humidity: parseFloat(rawData.fields.humidity?.doubleValue)
                         };
                     } else {
                         // Format SDK normal
                         console.log('📄 Format SDK normal détecté pour mesure');
+                        const timestamp = rawData.timestamp;
+                        let processedTimestamp = null;
+                        
+                        if (timestamp && timestamp.toDate) {
+                            processedTimestamp = timestamp.toDate();
+                        } else if (timestamp instanceof Date) {
+                            processedTimestamp = timestamp;
+                        } else if (typeof timestamp === 'string') {
+                            processedTimestamp = new Date(timestamp);
+                        }
+                        
                         processedData = {
                             id: doc.id,
                             deviceId: rawData.deviceId || deviceId,
                             co2_ppm: rawData.co2_ppm || rawData.co2 || null,
                             air_quality: rawData.air_quality,
                             timestamp: rawData.timestamp,
+                            processedTimestamp: processedTimestamp,
                             temperature: rawData.temperature,
                             humidity: rawData.humidity
                         };
@@ -1069,10 +1083,10 @@
                     measurementsData.push(processedData);
                 });
 
-                // Trier par timestamp croissant pour les graphiques
+                // Trier par timestamp croissant pour les graphiques en utilisant processedTimestamp
                 measurementsData.sort((a, b) => {
-                    const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0);
-                    const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0);
+                    const timeA = a.processedTimestamp || new Date(0);
+                    const timeB = b.processedTimestamp || new Date(0);
                     return timeA - timeB;
                 });
 
@@ -1177,9 +1191,15 @@
             badge.className = `quality-badge ${quality}`;
             badge.innerHTML = `<span>${getQualityEmoji(quality)}</span><span>${getQualityText(quality)}</span>`;
 
-            // Dernière mesure
-            document.getElementById('lastMeasurement').textContent = 
-                latest.timestamp.toDate ? latest.timestamp.toDate().toLocaleString('fr-FR') : 'Maintenant';
+            // Dernière mesure avec timestamp amélioré
+            let lastMeasurementText = 'Maintenant';
+            if (latest.processedTimestamp) {
+                lastMeasurementText = latest.processedTimestamp.toLocaleString('fr-FR');
+            } else if (latest.timestamp && latest.timestamp.toDate) {
+                lastMeasurementText = latest.timestamp.toDate().toLocaleString('fr-FR');
+            }
+            
+            document.getElementById('lastMeasurement').textContent = lastMeasurementText;
         }
 
         function updateStats() {
@@ -1267,12 +1287,19 @@
         function updateCharts() {
             if (measurementsData.length === 0) return;
 
-            // Graphique d'évolution
-            const labels = measurementsData.map(m => 
-                m.timestamp.toDate ? m.timestamp.toDate().toLocaleTimeString('fr-FR', { 
-                    hour: '2-digit', minute: '2-digit' 
-                }) : 'N/A'
-            );
+            // Graphique d'évolution avec timestamps améliorés
+            const labels = measurementsData.map(m => {
+                if (m.processedTimestamp) {
+                    return m.processedTimestamp.toLocaleTimeString('fr-FR', { 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                } else if (m.timestamp && m.timestamp.toDate) {
+                    return m.timestamp.toDate().toLocaleTimeString('fr-FR', { 
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                }
+                return 'N/A';
+            });
             const values = measurementsData.map(m => m.co2_ppm);
 
             evolutionChart.data.labels = labels;
@@ -1303,8 +1330,14 @@
             const recentData = measurementsData.slice(-20).reverse();
             
             tableBody.innerHTML = recentData.map(measurement => {
-                const timestamp = measurement.timestamp.toDate ? 
-                    measurement.timestamp.toDate().toLocaleString('fr-FR') : 'N/A';
+                // Améliorer l'affichage du timestamp
+                let timestamp = 'N/A';
+                if (measurement.processedTimestamp) {
+                    timestamp = measurement.processedTimestamp.toLocaleString('fr-FR');
+                } else if (measurement.timestamp && measurement.timestamp.toDate) {
+                    timestamp = measurement.timestamp.toDate().toLocaleString('fr-FR');
+                }
+                
                 const quality = getAirQuality(measurement.co2_ppm);
                 const qualityText = getQualityText(quality);
                 

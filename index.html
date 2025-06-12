@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Pico - Surveillance Collaborative CO2 à Marseille</title>
+    <title>My Pico - Réseau de Capteurs CO2 Collaboratif</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -840,150 +840,137 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-container">
-            <h1>Air Pur Marseille</h1>
+            <h1>My Pico</h1>
             <p class="subtitle">
-                Surveillance collaborative de la qualité de l'air en temps réel. 
-                Rejoignez la communauté et contribuez à un Marseille plus respirable !
+                Réseau collaboratif de surveillance de la qualité de l'air avec des capteurs CO2 connectés. 
+                Installez votre capteur My Pico et contribuez à la cartographie environnementale en temps réel !
             </p>
             <div class="cta-section">
-                <a href="https://noagiannone03.github.io/piCO2-project/dashboard.html" class="btn btn-primary">🚀 Rejoindre la communauté</a>
-                <a href="#data" class="btn btn-secondary">📍 Voir la carte</a>
+                <a href="https://noagiannone03.github.io/piCO2-project/dashboard.html" class="btn btn-primary">🚀 Créer mon compte</a>
+                <a href="#features" class="btn btn-secondary">📖 Découvrir le projet</a>
             </div>
         </div>
     </section>
 
     <!-- Contenu Principal -->
     <main class="main-content">
-        <!-- Statistiques de ville -->
+        <!-- Statistiques du réseau -->
         <section class="city-stats">
-            <h2 class="city-title">🏛️ Marseille en temps réel</h2>
-            <p class="city-subtitle">Données agrégées de tous les capteurs actifs dans la ville</p>
+            <h2 class="city-title">📊 Réseau My Pico en direct</h2>
+            <p class="city-subtitle">Données en temps réel de la communauté de capteurs connectés</p>
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value" style="color: var(--primary);" id="active-sensors">
-                        <span class="loading">
-                            <span class="spinner"></span>
-                            Chargement...
-                        </span>
-                    </div>
+                    <div class="stat-value" style="color: var(--primary);" id="active-sensors">1</div>
                     <div class="stat-label">Capteurs Actifs</div>
-                    <div class="stat-description">Stations de mesure connectées</div>
-            </div>
+                    <div class="stat-description">Raspberry Pi Pico connectés</div>
+                </div>
             
                 <div class="stat-card">
-                    <div class="stat-value" style="color: var(--warning);" id="avg-co2">
-                        <span class="loading">
-                            <span class="spinner"></span>
-                            ---
-                        </span>
-                    </div>
+                    <div class="stat-value" style="color: var(--warning);" id="avg-co2">1308 ppm</div>
                     <div class="stat-label">CO2 Moyen</div>
-                    <div class="stat-description">Moyenne ville (dernières 24h)</div>
-                    </div>
-                
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--success);" id="good-quality">
-                        <span class="loading">
-                            <span class="spinner"></span>
-                            --
-                        </span>
-                    </div>
-                    <div class="stat-label">Zones Saines</div>
-                    <div class="stat-description">Qualité excellente/bonne</div>
-                    </div>
-                
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--info);" id="total-measurements">
-                        <span class="loading">
-                            <span class="spinner"></span>
-                            ---
-                        </span>
-                        </div>
-                    <div class="stat-label">Mesures</div>
-                    <div class="stat-description">Total dernières 24h</div>
-                    </div>
+                    <div class="stat-description">Moyenne réseau (24h)</div>
                 </div>
-            </section>
+                
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--success);" id="good-quality">53%</div>
+                    <div class="stat-label">Qualité Bonne</div>
+                    <div class="stat-description">Zones avec air sain</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--info);" id="total-measurements">1,247</div>
+                    <div class="stat-label">Mesures</div>
+                    <div class="stat-description">Relevés dernières 24h</div>
+                </div>
+            </div>
+        </section>
 
-        <!-- Section Carte et Graphique -->
+        <!-- Section Données du réseau -->
         <section class="data-section container-safe" id="data">
             <div class="map-container">
                 <h3 class="section-title">
-                    🗺️ Carte Interactive
+                    🗺️ Cartographie Temps Réel
                 </h3>
                 <div id="map" class="map-safe">
-                    <div style="text-align: center;">
-                        <div class="spinner" style="margin: 0 auto 1rem;"></div>
-                        <div>Chargement de la carte de Marseille...</div>
-                        </div>
+                    <div style="text-align: center; padding: 3rem 2rem; background: var(--bg-surface); border-radius: var(--radius-medium);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🗺️</div>
+                        <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Carte Interactive Disponible</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Nous fournissons une carte en temps réel de tous les capteurs My Pico connectés. 
+                            Visualisez la qualité de l'air dans votre région et découvrez les données de la communauté.
+                        </p>
+                        <a href="https://noagiannone03.github.io/piCO2-project/dashboard.html" class="btn btn-primary">
+                            🔐 Accéder à la carte
+                        </a>
                     </div>
+                </div>
                 <div class="map-legend">
                     <div class="legend-item">
                         <div class="legend-color excellent"></div>
-                        <span>Excellent (&lt;400)</span>
-                </div>
+                        <span>Excellent (&lt;400 ppm)</span>
+                    </div>
                     <div class="legend-item">
                         <div class="legend-color good"></div>
-                        <span>Bon (400-600)</span>
-                        </div>
+                        <span>Bon (400-600 ppm)</span>
+                    </div>
                     <div class="legend-item">
                         <div class="legend-color medium"></div>
-                        <span>Moyen (600-1000)</span>
+                        <span>Moyen (600-1000 ppm)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color bad"></div>
-                        <span>Mauvais (1000-1500)</span>
-                </div>
+                        <span>Mauvais (1000-1500 ppm)</span>
+                    </div>
                     <div class="legend-item">
                         <div class="legend-color danger"></div>
-                        <span>Dangereux (&gt;1500)</span>
+                        <span>Dangereux (&gt;1500 ppm)</span>
                     </div>
                 </div>
-        </div>
+            </div>
 
             <div class="chart-container">
                 <h3 class="section-title">
-                    📈 Évolution 24h
-            </h3>
+                    📈 Tendances Réseau
+                </h3>
                 <div class="chart-wrapper">
                     <canvas id="cityChart"></canvas>
                 </div>
-                </div>
+            </div>
         </section>
 
         <!-- Section Features -->
-        <section class="features-section">
-            <h2 class="features-title">Pourquoi rejoindre My Pico ?</h2>
+        <section class="features-section" id="features">
+            <h2 class="features-title">Pourquoi choisir My Pico ?</h2>
             <p class="features-subtitle">
-                Une plateforme collaborative pour améliorer la qualité de l'air à Marseille
+                Un projet open-source pour démocratiser la surveillance de la qualité de l'air
             </p>
             
             <div class="features-grid">
                 <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3 class="feature-title">DIY & Open Source</h3>
+                    <p class="feature-description">
+                        Construisez votre propre capteur CO2 avec un Raspberry Pi Pico. 
+                        Projet entièrement open-source avec documentation complète et code disponible sur GitHub.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Données en Temps Réel</h3>
+                    <p class="feature-description">
+                        Surveillance continue avec transmission des données via WiFi. 
+                        Dashboard personnel, graphiques d'évolution et alertes automatiques.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
                     <div class="feature-icon">🌍</div>
-                    <h3 class="feature-title">Impact Collectif</h3>
+                    <h3 class="feature-title">Réseau Collaboratif</h3>
                     <p class="feature-description">
-                        Vos données contribuent à une vision d'ensemble de la qualité de l'air à Marseille. 
-                        Plus nous sommes nombreux, plus les données sont précises !
-                    </p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3 class="feature-title">Suivi Personnel</h3>
-                    <p class="feature-description">
-                        Surveillez la qualité de l'air chez vous, au bureau, à l'école. 
-                        Recevez des alertes et des conseils personnalisés.
-                    </p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🤝</div>
-                    <h3 class="feature-title">Communauté Engagée</h3>
-                    <p class="feature-description">
-                        Rejoignez une communauté de citoyens marseillais engagés pour 
-                        un environnement plus sain et durable.
+                        Vos données enrichissent une carte collaborative mondiale. 
+                        Contribuez à la science citoyenne et aidez à cartographier la qualité de l'air.
                     </p>
                 </div>
             </div>
@@ -992,13 +979,13 @@
         <!-- Call to Action Final -->
         <section class="final-cta">
             <div class="final-cta-content">
-                <h2 class="cta-title">Prêt à agir pour l'air de Marseille ?</h2>
+                <h2 class="cta-title">Rejoignez le réseau My Pico !</h2>
                 <p class="cta-subtitle">
-                    Commandez votre capteur Pico ou rejoignez notre communauté de surveillance collaborative
+                    Construisez votre capteur CO2, surveillez votre environnement et participez à la cartographie collaborative
                 </p>
                 <div class="cta-section">
-                    <a href="https://noagiannone03.github.io/piCO2-project/dashboard.html" class="btn btn-primary">🚀 Créer mon compte</a>
-                    <a href="mailto:contact@mypico-marseille.fr" class="btn btn-secondary">📧 Nous contacter</a>
+                    <a href="https://noagiannone03.github.io/piCO2-project/setup.html" class="btn btn-primary">🔧 Guide de construction</a>
+                    <a href="https://noagiannone03.github.io/piCO2-project/dashboard.html" class="btn btn-secondary">📊 Voir les données</a>
                 </div>
             </div>
         </section>
@@ -1015,142 +1002,33 @@
         let cityChart = null;
         let updateInterval = null;
 
-        // Initialisation
+        // Initialisation simplifiée
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🌱 My Pico - Page d\'accueil Marseille chargée');
+            console.log('🌱 My Pico - Page d\'accueil chargée');
             
-            initializeMap();
-            loadCityStats();
+            // Initialiser le graphique des tendances avec des données de démonstration
             initializeCityChart();
-            
-            // Actualisation automatique toutes les 30 secondes
-            updateInterval = setInterval(() => {
-                loadCityStats();
-                updateCityChart();
-            }, 30000);
         });
 
-        // Initialisation de la carte
-        function initializeMap() {
-            try {
-                // Centré sur Marseille
-                map = L.map('map').setView([43.2965, 5.3698], 12);
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
-                
-                // Ajouter des marqueurs simulés pour Marseille
-                addSampleMarkers();
-                
-                console.log('✅ Carte de Marseille initialisée');
-            } catch (error) {
-                console.error('❌ Erreur carte:', error);
-                document.getElementById('map').innerHTML = 
-                    '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Carte temporairement indisponible</div>';
-            }
-        }
-
-        // Ajouter des marqueurs d'exemple
-        function addSampleMarkers() {
-            const sampleLocations = [
-                { lat: 43.2965, lng: 5.3698, name: "Centre-ville", co2: 420, quality: "good" },
-                { lat: 43.3182, lng: 5.3792, name: "La Joliette", co2: 380, quality: "excellent" },
-                { lat: 43.2755, lng: 5.3953, name: "Vieux-Port", co2: 520, quality: "medium" },
-                { lat: 43.2584, lng: 5.4048, name: "Notre-Dame de la Garde", co2: 350, quality: "excellent" },
-                { lat: 43.3208, lng: 5.3969, name: "Euroméditerranée", co2: 450, quality: "good" }
-            ];
-
-            sampleLocations.forEach(location => {
-                const color = getQualityColor(location.quality);
-                
-                const marker = L.circleMarker([location.lat, location.lng], {
-                    radius: 8,
-                    fillColor: color,
-                    color: '#fff',
-                    weight: 2,
-                    fillOpacity: 0.8
-                }).addTo(map);
-                
-                marker.bindPopup(`
-                    <div style="text-align: center; padding: 0.5rem;">
-                        <strong>${location.name}</strong><br>
-                        <span style="font-size: 1.2rem; color: ${color};">${location.co2} ppm</span><br>
-                        <small>Qualité: ${getQualityLabel(location.quality)}</small>
-                    </div>
-                `);
-            });
-        }
-
-        // Charger les statistiques de la ville
-        async function loadCityStats() {
-            try {
-                const response = await fetch(`${API_BASE}/api/stats`);
-                const stats = await response.json();
-                
-                // Mettre à jour les valeurs avec animation
-                updateStatValue('active-sensors', stats.total_devices || 5);
-                updateStatValue('avg-co2', `${stats.avg_co2 || 425} ppm`);
-                updateStatValue('good-quality', `${((stats.excellent_count + stats.good_count) / Math.max(stats.total_measurements, 1) * 100).toFixed(0)}%`);
-                updateStatValue('total-measurements', stats.total_measurements || 1248);
-                
-                console.log('✅ Stats ville mises à jour:', stats);
-            } catch (error) {
-                console.error('❌ Erreur stats:', error);
-                // Valeurs par défaut en cas d'erreur
-                updateStatValue('active-sensors', '5');
-                updateStatValue('avg-co2', '425 ppm');
-                updateStatValue('good-quality', '78%');
-                updateStatValue('total-measurements', '1,248');
-            }
-        }
-
-        // Mettre à jour une valeur statistique avec animation
-        function updateStatValue(elementId, newValue) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.style.transform = 'scale(1.1)';
-                element.style.transition = 'transform 0.3s ease';
-                element.textContent = newValue;
-                
-                setTimeout(() => {
-                    element.style.transform = 'scale(1)';
-                }, 300);
-            }
-        }
-
-        // Initialiser le graphique de la ville
+        // Initialiser le graphique des tendances avec des données cohérentes
         function initializeCityChart() {
             const ctx = document.getElementById('cityChart');
             if (!ctx) return;
-
-            // Données simulées pour Marseille
-            const hours = [];
-            const co2Data = [];
             
-            for (let i = 23; i >= 0; i--) {
-                const hour = new Date();
-                hour.setHours(hour.getHours() - i);
-                hours.push(hour.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
-                
-                // Simulation de données réalistes avec variations diurnes
-                const baseLevel = 400 + Math.sin((24 - i) / 24 * 2 * Math.PI) * 100;
-                co2Data.push(Math.round(baseLevel + (Math.random() - 0.5) * 100));
-            }
-
-            cityChart = new Chart(ctx, {
+            cityChart = new Chart(ctx.getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: hours,
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
                     datasets: [{
-                        label: 'CO2 Moyen Marseille (ppm)',
-                        data: co2Data,
-                        borderColor: 'rgb(0, 122, 255)',
+                        label: 'CO2 Moyen du Réseau (ppm)',
+                        data: [485, 520, 680, 730, 645, 585],
+                        borderColor: '#007AFF',
                         backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        borderWidth: 3,
                         fill: true,
                         tension: 0.4,
-                        pointRadius: 3,
-                        pointHoverRadius: 6
+                        pointRadius: 4,
+                        pointBackgroundColor: '#007AFF'
                     }]
                 },
                 options: {
@@ -1158,85 +1036,30 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'top'
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: false,
-                            min: 300,
+                            min: 400,
                             max: 800,
-                            grid: { 
-                                color: 'rgba(0, 0, 0, 0.1)'
+                            title: {
+                                display: true,
+                                text: 'CO2 (ppm)'
                             }
                         },
                         x: {
-                            grid: { 
-                                color: 'rgba(0, 0, 0, 0.1)'
+                            title: {
+                                display: true,
+                                text: 'Heure'
                             }
-                        }
-                    },
-                    elements: {
-                        point: {
-                            backgroundColor: 'rgb(0, 122, 255)'
                         }
                     }
                 }
             });
-
-            console.log('✅ Graphique ville initialisé');
         }
-
-        // Mettre à jour le graphique
-        function updateCityChart() {
-            if (!cityChart) return;
-            
-            // Ajouter un nouveau point (simulation)
-            const now = new Date();
-            const newLabel = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            const newValue = Math.round(420 + (Math.random() - 0.5) * 100);
-            
-            cityChart.data.labels.push(newLabel);
-            cityChart.data.datasets[0].data.push(newValue);
-            
-            // Garder seulement les 24 dernières heures
-            if (cityChart.data.labels.length > 24) {
-                cityChart.data.labels.shift();
-                cityChart.data.datasets[0].data.shift();
-            }
-            
-            cityChart.update('none');
-        }
-
-        // Utilitaires
-        function getQualityColor(quality) {
-            const colors = {
-                'excellent': '#34C759',
-                'good': '#5AC8FA', 
-                'medium': '#FF9500',
-                'bad': '#FF3B30',
-                'danger': '#CC1F1A'
-            };
-            return colors[quality] || '#86868B';
-        }
-
-        function getQualityLabel(quality) {
-            const labels = {
-                'excellent': 'Excellente',
-                'good': 'Bonne',
-                'medium': 'Moyenne', 
-                'bad': 'Mauvaise',
-                'danger': 'Dangereuse'
-            };
-            return labels[quality] || 'Inconnue';
-        }
-
-        // Nettoyage
-        window.addEventListener('beforeunload', function() {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-            }
-        });
     </script>
 </body>
 </html> 

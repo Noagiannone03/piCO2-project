@@ -1922,8 +1922,13 @@
                     }
                 }
                 
-                // Dernière mise à jour - gestion des différents formats de timestamp
-                if (lastMeasurement.timestamp) {
+                // Amélioration de l'affichage de la dernière mise à jour
+                if (lastMeasurement.processedTimestamp) {
+                    // Utiliser le timestamp traité
+                    const lastUpdate = lastMeasurement.processedTimestamp;
+                    lastUpdateText = formatTimeAgo(lastUpdate);
+                } else if (lastMeasurement.timestamp) {
+                    // Fallback sur l'ancien système
                     let lastUpdate;
                     
                     if (lastMeasurement.timestamp.toDate) {
@@ -1938,20 +1943,7 @@
                     }
                     
                     if (lastUpdate && !isNaN(lastUpdate.getTime())) {
-                        const now = new Date();
-                        const diffMinutes = Math.floor((now - lastUpdate) / (1000 * 60));
-                        
-                        if (diffMinutes < 1) {
-                            lastUpdateText = 'À l\'instant';
-                        } else if (diffMinutes < 60) {
-                            lastUpdateText = `Il y a ${diffMinutes}min`;
-                        } else if (diffMinutes < 1440) {
-                            const diffHours = Math.floor(diffMinutes / 60);
-                            lastUpdateText = `Il y a ${diffHours}h`;
-                        } else {
-                            const diffDays = Math.floor(diffMinutes / 1440);
-                            lastUpdateText = `Il y a ${diffDays}j`;
-                        }
+                        lastUpdateText = formatTimeAgo(lastUpdate);
                     }
                 }
             }
@@ -2373,12 +2365,14 @@
         // Variables globales pour la carte
         let map = null;
         let mapDevices = [];
+        let mapReports = []; // Nouveau: pour stocker les signalements
         let currentChart = null;
         let selectedReportData = null;
         let selectedReportType = null;
 
         // Rendre mapDevices accessible globalement
         window.mapDevices = mapDevices;
+        window.mapReports = mapReports; // Nouveau: rendre les signalements accessibles
 
         async function loadCollaborativeMap() {
             try {
@@ -2408,17 +2402,27 @@
                             measurementsSnap.forEach(doc => {
                                 const data = doc.data();
                                 let co2Value = null;
+                                let processedTimestamp = null;
                                 
                                 if (data.fields) {
                                     // Format API REST
                                     co2Value = parseInt(data.fields.co2_ppm?.integerValue) || null;
+                                    processedTimestamp = data.fields.timestamp?.timestampValue ? 
+                                        new Date(data.fields.timestamp.timestampValue) : null;
                                 } else {
                                     // Format SDK normal
                                     co2Value = data.co2_ppm || data.co2 || null;
+                                    processedTimestamp = data.timestamp && data.timestamp.toDate ? 
+                                        data.timestamp.toDate() : 
+                                        (data.timestamp ? new Date(data.timestamp) : null);
                                 }
                                 
                                 if (co2Value && typeof co2Value === 'number') {
-                                    measurements.push({ ...data, co2_ppm: co2Value });
+                                    measurements.push({ 
+                                        ...data, 
+                                        co2_ppm: co2Value,
+                                        processedTimestamp: processedTimestamp
+                                    });
                                     totalCO2 += co2Value;
                                     validCount++;
                                 }
@@ -2446,10 +2450,14 @@
                     mapDevices = generateDemoDevices();
                 }
                 
+                // Charger les signalements
+                await loadMapReports();
+                
                 // Mettre à jour la référence globale
                 window.mapDevices = mapDevices;
+                window.mapReports = mapReports;
                 
-                console.log(`🗺️ ${mapDevices.length} devices chargés pour la carte`);
+                console.log(`🗺️ ${mapDevices.length} devices et ${mapReports.length} signalements chargés pour la carte`);
                 
                 // Initialiser la carte Leaflet
                 await initializeLeafletMap();
@@ -2462,6 +2470,45 @@
                         <small>Vérifiez votre connexion</small>
                     </div>
                 `;
+            }
+        }
+
+        // Nouvelle fonction pour charger les signalements
+        async function loadMapReports() {
+            try {
+                console.log('📋 Chargement des signalements...');
+                const reportsQuery = query(
+                    collection(db, 'reports'),
+                    orderBy('reportedAt', 'desc'),
+                    limit(50)
+                );
+                const reportsSnapshot = await getDocs(reportsQuery);
+                
+                mapReports = [];
+                reportsSnapshot.forEach((doc) => {
+                    const reportData = { id: doc.id, ...doc.data() };
+                    
+                    // Traiter le timestamp du signalement
+                    if (reportData.reportedAt && reportData.reportedAt.toDate) {
+                        reportData.processedReportedAt = reportData.reportedAt.toDate();
+                    } else if (reportData.reportedAt) {
+                        reportData.processedReportedAt = new Date(reportData.reportedAt);
+                    }
+                    
+                    // Traiter le timestamp de la mesure
+                    if (reportData.measurementTimestamp && reportData.measurementTimestamp.toDate) {
+                        reportData.processedMeasurementTimestamp = reportData.measurementTimestamp.toDate();
+                    } else if (reportData.measurementTimestamp) {
+                        reportData.processedMeasurementTimestamp = new Date(reportData.measurementTimestamp);
+                    }
+                    
+                    mapReports.push(reportData);
+                });
+                
+                console.log(`📋 ${mapReports.length} signalements chargés`);
+            } catch (error) {
+                console.error('Erreur chargement signalements:', error);
+                mapReports = [];
             }
         }
 
@@ -2541,7 +2588,7 @@
             }).addTo(map);
             
             // Ajouter les marqueurs des devices
-            mapDevices.forEach(device => {
+            mapDevices.forEach((device, index) => {
                 const color = getCO2Color(device.avgCO2);
                 const icon = L.divIcon({
                     html: `<div style="
@@ -2567,9 +2614,8 @@
                     .addTo(map);
                 
                 // Ajouter un ID unique au device et le stocker
-                const deviceIndex = mapDevices.indexOf(device);
-                device._mapIndex = deviceIndex;
-                window.mapDevices[deviceIndex] = device;
+                device._mapIndex = index;
+                window.mapDevices[index] = device;
 
                 // Popup avec infos du device
                 const popupContent = `
@@ -2586,7 +2632,7 @@
                         <p style="margin: 0.25rem 0; color: var(--text-secondary);">
                             ${getCO2Label(device.avgCO2)}
                         </p>
-                        <button onclick="window.openDeviceDetails(window.mapDevices[${deviceIndex}])" 
+                        <button onclick="window.openDeviceDetails(window.mapDevices[${index}])" 
                                 style="
                                     margin-top: 0.75rem;
                                     padding: 0.5rem 1rem;
@@ -2605,7 +2651,67 @@
                 marker.bindPopup(popupContent);
             });
             
-            console.log(`✅ Carte Leaflet initialisée avec ${mapDevices.length} marqueurs`);
+            // Ajouter les marqueurs de signalements
+            mapReports.forEach((report, reportIndex) => {
+                // Trouver le device correspondant au signalement
+                const relatedDevice = mapDevices.find(device => device.id === report.deviceId);
+                
+                if (relatedDevice && relatedDevice.coordinates) {
+                    // Créer un marqueur de signalement légèrement décalé du device
+                    const offsetLat = relatedDevice.coordinates.lat + (Math.random() - 0.5) * 0.001;
+                    const offsetLng = relatedDevice.coordinates.lng + (Math.random() - 0.5) * 0.001;
+                    
+                    const reportIcon = L.divIcon({
+                        html: `<div style="
+                            width: 16px; 
+                            height: 16px; 
+                            border-radius: 50%; 
+                            background: ${getReportTypeColor(report.reportType)}; 
+                            border: 2px solid white;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 8px;
+                            color: white;
+                        ">${getReportTypeEmoji(report.reportType)}</div>`,
+                        className: 'report-marker',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+                    
+                    const reportMarker = L.marker([offsetLat, offsetLng], { icon: reportIcon })
+                        .addTo(map);
+                    
+                    // Popup avec infos du signalement
+                    const reportPopupContent = `
+                        <div style="min-width: 180px;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">
+                                ${getReportTypeEmoji(report.reportType)} Signalement
+                            </h4>
+                            <p style="margin: 0.25rem 0; color: var(--text-secondary);">
+                                <strong>Cause:</strong> ${getReportTypeLabel(report.reportType)}
+                            </p>
+                            <p style="margin: 0.25rem 0; color: var(--text-secondary);">
+                                <strong>CO2:</strong> ${report.co2Value} ppm
+                            </p>
+                            <p style="margin: 0.25rem 0; color: var(--text-secondary);">
+                                <strong>Signalé:</strong> ${report.processedReportedAt ? 
+                                    report.processedReportedAt.toLocaleDateString('fr-FR') : 'Date inconnue'}
+                            </p>
+                            ${report.comment ? `
+                                <p style="margin: 0.5rem 0; font-style: italic; color: var(--text-tertiary);">
+                                    "${report.comment}"
+                                </p>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    reportMarker.bindPopup(reportPopupContent);
+                }
+            });
+            
+            console.log(`✅ Carte Leaflet initialisée avec ${mapDevices.length} marqueurs de devices et ${mapReports.length} signalements`);
         }
 
         function getCO2Color(co2Value) {
@@ -2863,9 +2969,86 @@
                 
                 // Sauvegarder dans Firestore
                 const reportsRef = collection(db, 'reports');
-                await addDoc(reportsRef, reportData);
+                const newReportDoc = await addDoc(reportsRef, reportData);
                 
-                showSuccess('Signalement envoyé avec succès ! Merci pour votre contribution.');
+                // Ajouter le nouveau signalement à la liste locale immédiatement
+                const newReport = {
+                    id: newReportDoc.id,
+                    ...reportData,
+                    processedReportedAt: new Date(),
+                    processedMeasurementTimestamp: selectedReportData.measurement.timestamp && 
+                        selectedReportData.measurement.timestamp.toDate ? 
+                        selectedReportData.measurement.timestamp.toDate() : 
+                        new Date(selectedReportData.measurement.timestamp)
+                };
+                
+                mapReports.push(newReport);
+                window.mapReports = mapReports;
+                
+                // Rafraîchir la carte pour afficher le nouveau signalement
+                if (map) {
+                    // Trouver le device correspondant
+                    const relatedDevice = mapDevices.find(device => device.id === newReport.deviceId);
+                    
+                    if (relatedDevice && relatedDevice.coordinates) {
+                        // Ajouter le marqueur de signalement
+                        const offsetLat = relatedDevice.coordinates.lat + (Math.random() - 0.5) * 0.001;
+                        const offsetLng = relatedDevice.coordinates.lng + (Math.random() - 0.5) * 0.001;
+                        
+                        const reportIcon = L.divIcon({
+                            html: `<div style="
+                                width: 16px; 
+                                height: 16px; 
+                                border-radius: 50%; 
+                                background: ${getReportTypeColor(newReport.reportType)}; 
+                                border: 2px solid white;
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 8px;
+                                color: white;
+                            ">${getReportTypeEmoji(newReport.reportType)}</div>`,
+                            className: 'report-marker',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        });
+                        
+                        const reportMarker = L.marker([offsetLat, offsetLng], { icon: reportIcon })
+                            .addTo(map);
+                        
+                        const reportPopupContent = `
+                            <div style="min-width: 180px;">
+                                <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">
+                                    ${getReportTypeEmoji(newReport.reportType)} Signalement (Nouveau!)
+                                </h4>
+                                <p style="margin: 0.25rem 0; color: var(--text-secondary);">
+                                    <strong>Cause:</strong> ${getReportTypeLabel(newReport.reportType)}
+                                </p>
+                                <p style="margin: 0.25rem 0; color: var(--text-secondary);">
+                                    <strong>CO2:</strong> ${newReport.co2Value} ppm
+                                </p>
+                                <p style="margin: 0.25rem 0; color: var(--text-secondary);">
+                                    <strong>Signalé:</strong> À l'instant
+                                </p>
+                                ${newReport.comment ? `
+                                    <p style="margin: 0.5rem 0; font-style: italic; color: var(--text-tertiary);">
+                                        "${newReport.comment}"
+                                    </p>
+                                ` : ''}
+                            </div>
+                        `;
+                        
+                        reportMarker.bindPopup(reportPopupContent);
+                        
+                        // Ouvrir automatiquement le popup du nouveau signalement
+                        setTimeout(() => {
+                            reportMarker.openPopup();
+                        }, 500);
+                    }
+                }
+                
+                showSuccess('Signalement envoyé avec succès ! Il apparaît maintenant sur la carte pour tous les utilisateurs.');
                 closeReportModal();
                 
             } catch (error) {
@@ -2901,6 +3084,7 @@
                 map = null;
             }
             await loadCollaborativeMap();
+            showSuccess('Carte actualisée avec les dernières données !');
         };
 
         // Fonction de diagnostic Firestore (à supprimer après test)
@@ -3042,6 +3226,68 @@
             document.body.appendChild(notification);
             
             setTimeout(() => notification.remove(), 5000);
+        }
+
+        // Fonctions utilitaires pour les signalements
+        function getReportTypeColor(reportType) {
+            const colors = {
+                'traffic': '#FF9500',      // Orange pour trafic
+                'construction': '#FF6B35', // Orange-rouge pour travaux
+                'factory': '#8E44AD',      // Violet pour industrie
+                'fire': '#E74C3C',         // Rouge pour incendie
+                'event': '#3498DB',        // Bleu pour événement
+                'other': '#95A5A6'         // Gris pour autre
+            };
+            return colors[reportType] || '#95A5A6';
+        }
+
+        function getReportTypeEmoji(reportType) {
+            const emojis = {
+                'traffic': '🚗',
+                'construction': '🚧',
+                'factory': '🏭',
+                'fire': '🔥',
+                'event': '🎪',
+                'other': '❓'
+            };
+            return emojis[reportType] || '❓';
+        }
+
+        function getReportTypeLabel(reportType) {
+            const labels = {
+                'traffic': 'Trafic dense',
+                'construction': 'Travaux',
+                'factory': 'Usine / Industrie',
+                'fire': 'Incendie / Fumée',
+                'event': 'Événement',
+                'other': 'Autre'
+            };
+            return labels[reportType] || 'Autre';
+        }
+
+        // Nouvelle fonction utilitaire pour formater le temps écoulé
+        function formatTimeAgo(date) {
+            if (!date || isNaN(date.getTime())) {
+                return '---';
+            }
+            
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffMinutes < 1) {
+                return 'À l\'instant';
+            } else if (diffMinutes < 60) {
+                return `Il y a ${diffMinutes}min`;
+            } else if (diffHours < 24) {
+                return `Il y a ${diffHours}h`;
+            } else if (diffDays < 7) {
+                return `Il y a ${diffDays}j`;
+            } else {
+                return date.toLocaleDateString('fr-FR');
+            }
         }
     </script>
 </body>
