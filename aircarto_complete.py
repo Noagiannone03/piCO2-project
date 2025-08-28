@@ -78,6 +78,15 @@ device_registered = False
 startup_time = time.time()
 last_wifi_config_check = 0
 current_wifi_config_version = 1
+last_display_config_check = 0
+current_display_config_version = 1
+current_display_config = {
+    'header_text': 'My Pico',
+    'show_wifi_status': True,
+    'show_time': False,
+    'show_air_quality_text': True,
+    'wifi_display_mode': 'bars'  # 'bars', 'icon', 'text'
+}
 
 # =====================================================
 # UTILITAIRES SYSTÈME
@@ -425,6 +434,20 @@ def register_device_firebase():
                     }
                 }
             },
+            "displayConfig": {
+                "mapValue": {
+                    "fields": {
+                        "headerText": {"stringValue": "My Pico"},
+                        "showWifiStatus": {"booleanValue": True},
+                        "showTime": {"booleanValue": False},
+                        "showAirQualityText": {"booleanValue": True},
+                        "wifiDisplayMode": {"stringValue": "bars"},
+                        "configVersion": {"integerValue": "1"},
+                        "lastModified": {"timestampValue": time_to_iso()},
+                        "changeRequested": {"booleanValue": False}
+                    }
+                }
+            },
             "calibration": {
                 "mapValue": {
                     "fields": {
@@ -709,19 +732,19 @@ def apply_new_wifi_config(new_config):
             
             return True
         else:
-            print(f"❌ Échec connexion au nouveau réseau: {new_config['ssid']}")
+            print(f"❌ Échec connexion au nouveau reseau: {new_config['ssid']}")
             
             # Marquer l'échec dans Firebase
             update_wifi_connection_status("failed", new_config['version'])
             
             # Essayer de se reconnecter à l'ancien réseau
-            print("🔄 Reconnexion à l'ancien réseau...")
+            print("🔄 Reconnexion à l ancien reseau...")
             old_config = load_config()
             if old_config.get('wifi'):
                 connect_wifi(old_config['wifi']['ssid'], old_config['wifi']['password'])
             
             if mascot:
-                mascot.draw_config_screen("wifi_fail", "Échec nouveau WiFi", "Ancien réseau restauré")
+                mascot.draw_config_screen("wifi_fail", "Ancien reseau restaure")
                 time.sleep(3)
             
             return False
@@ -765,6 +788,181 @@ def update_wifi_connection_status(status, version, ssid=None):
         
     except Exception as e:
         print(f"❌ Erreur mise à jour statut WiFi: {e}")
+
+def get_wifi_bars(rssi):
+    """Convertit le RSSI en barres WiFi visuelles"""
+    if rssi >= -50:
+        return "████"  # 4 barres - Signal excellent
+    elif rssi >= -60:
+        return "███ "  # 3 barres - Signal bon
+    elif rssi >= -70:
+        return "██  "  # 2 barres - Signal moyen
+    elif rssi >= -80:
+        return "█   "  # 1 barre - Signal faible
+    else:
+        return "    "  # Aucune barre - Signal très faible
+
+def get_wifi_display(mode, rssi):
+    """Génère l'affichage WiFi selon le mode choisi"""
+    if not wifi_connected:
+        return "❌" if mode == 'icon' else "OFFLINE"
+    
+    if mode == 'bars':
+        return get_wifi_bars(rssi)
+    elif mode == 'icon':
+        return "📶"
+    else:  # mode == 'text'
+        if rssi >= -50:
+            return "EXCELLENT"
+        elif rssi >= -60:
+            return "BON"
+        elif rssi >= -70:
+            return "MOYEN"
+        elif rssi >= -80:
+            return "FAIBLE"
+        else:
+            return "TRES FAIBLE"
+
+def get_current_time_display():
+    """Retourne l'heure actuelle formatée pour l'affichage"""
+    try:
+        t = time.localtime()
+        if t[0] >= 2024:  # Heure valide
+            return f"{t[3]:02d}:{t[4]:02d}"
+        else:
+            # Utiliser uptime approximatif
+            uptime_minutes = int((time.time() - startup_time) / 60)
+            hours = uptime_minutes // 60
+            mins = uptime_minutes % 60
+            return f"{hours:02d}:{mins:02d}"
+    except:
+        return "--:--"
+
+def check_display_config_changes():
+    """Vérifie si la configuration d'affichage a été modifiée dans Firebase"""
+    global current_display_config_version, last_display_config_check
+    
+    # Vérifier seulement toutes les minutes pour éviter de surcharger Firebase
+    current_time = time.time()
+    if current_time - last_display_config_check < 60:
+        return None
+    
+    last_display_config_check = current_time
+    
+    try:
+        print("🎨 Vérification changements affichage...")
+        
+        # Récupérer la config d'affichage actuelle depuis Firebase
+        result = firebase_request("GET", f"devices/{DEVICE_ID}")
+        
+        if not result or 'fields' not in result:
+            print("❌ Impossible de récupérer la config Firebase")
+            return None
+        
+        display_config = result['fields'].get('displayConfig', {})
+        if 'mapValue' not in display_config or 'fields' not in display_config['mapValue']:
+            print("📋 Aucune config affichage dans Firebase")
+            return None
+        
+        display_fields = display_config['mapValue']['fields']
+        
+        # Vérifier si un changement est demandé
+        change_requested = display_fields.get('changeRequested', {}).get('booleanValue', False)
+        
+        if not change_requested:
+            return None
+        
+        # Récupérer la nouvelle configuration
+        config_version = int(display_fields.get('configVersion', {}).get('integerValue', '1'))
+        
+        if config_version <= current_display_config_version:
+            print("📋 Version config déjà traitée")
+            return None
+        
+        new_config = {
+            'header_text': display_fields.get('headerText', {}).get('stringValue', 'My Pico'),
+            'show_wifi_status': display_fields.get('showWifiStatus', {}).get('booleanValue', True),
+            'show_time': display_fields.get('showTime', {}).get('booleanValue', False),
+            'show_air_quality_text': display_fields.get('showAirQualityText', {}).get('booleanValue', True),
+            'wifi_display_mode': display_fields.get('wifiDisplayMode', {}).get('stringValue', 'bars'),
+            'version': config_version
+        }
+        
+        print(f"🆕 Nouvelle config affichage détectée (version {config_version}):")
+        print(f"   📱 En-tête: {new_config['header_text']}")
+        print(f"   📶 WiFi: {new_config['wifi_display_mode']} ({new_config['show_wifi_status']})")
+        print(f"   🕐 Heure: {new_config['show_time']}")
+        print(f"   🌬️ Qualité air: {new_config['show_air_quality_text']}")
+        
+        return new_config
+        
+    except Exception as e:
+        print(f"❌ Erreur vérification config affichage: {e}")
+        return None
+
+def apply_new_display_config(new_config):
+    """Applique une nouvelle configuration d'affichage"""
+    global current_display_config_version, current_display_config
+    
+    print(f"🎨 Application nouvelle config affichage (version {new_config['version']})")
+    
+    try:
+        # Mettre à jour la configuration locale
+        current_display_config.update({
+            'header_text': new_config['header_text'],
+            'show_wifi_status': new_config['show_wifi_status'],
+            'show_time': new_config['show_time'],
+            'show_air_quality_text': new_config['show_air_quality_text'],
+            'wifi_display_mode': new_config['wifi_display_mode']
+        })
+        
+        current_display_config_version = new_config['version']
+        
+        # Confirmer le succès dans Firebase
+        update_display_config_status("applied", new_config['version'])
+        
+        # Affichage de confirmation sur l'écran
+        if mascot:
+            mascot.draw_config_screen("display_updated", "Affichage mis à jour!", "Nouvelle config")
+            time.sleep(2)
+        else:
+            display_status("Affichage mis à jour!", "Nouvelle config")
+            time.sleep(2)
+        
+        print(f"✅ Configuration d'affichage appliquée avec succès!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Erreur application config affichage: {e}")
+        update_display_config_status("error", new_config['version'])
+        return False
+
+def update_display_config_status(status, version):
+    """Met à jour le statut de configuration d'affichage dans Firebase"""
+    try:
+        update_data = {
+            "fields": {
+                "displayConfig": {
+                    "mapValue": {
+                        "fields": {
+                            "lastApplied": {"timestampValue": time_to_iso()},
+                            "applyStatus": {"stringValue": status},
+                            "configVersion": {"integerValue": str(version)},
+                            "changeRequested": {"booleanValue": False}
+                        }
+                    }
+                }
+            }
+        }
+        
+        firebase_request("PATCH", 
+                        f"devices/{DEVICE_ID}?updateMask.fieldPaths=displayConfig.lastApplied&updateMask.fieldPaths=displayConfig.applyStatus&updateMask.fieldPaths=displayConfig.configVersion&updateMask.fieldPaths=displayConfig.changeRequested", 
+                        update_data)
+        
+        print(f"📋 Statut config affichage mis à jour: {status}")
+        
+    except Exception as e:
+        print(f"❌ Erreur mise à jour statut config affichage: {e}")
 
 # =====================================================
 # GESTION WIFI & CONFIGURATION
@@ -1274,35 +1472,69 @@ def display_status(title, subtitle=""):
         oled.show()
 
 def draw_main_display(co2_ppm, status, emoji, wifi_status, firebase_status):
-    """Affiche l'interface principale"""
+    """Affiche l'interface principale avec configuration dynamique"""
     if not oled:
         return
         
     oled.fill(0)
     
-    # En-tête avec statuts
-    oled.text("My Pico", 30, 0)
+    # En-tête personnalisable
+    header_text = current_display_config.get('header_text', 'My Pico')
+    # Centrer le texte selon sa longueur
+    header_x = max(0, (128 - len(header_text) * 8) // 2)
+    oled.text(header_text, header_x, 0)
     
-    # Statuts connexion
-    wifi_icon = "📶" if wifi_connected else "❌"
+    # Zone de statut (ligne du haut droite)
+    status_line = ""
     
-    # Gestion des statuts Firebase
+    # Affichage WiFi configurable
+    if current_display_config.get('show_wifi_status', True):
+        try:
+            wlan = network.WLAN(network.STA_IF)
+            rssi = wlan.status('rssi') if wlan.isconnected() else -100
+            wifi_mode = current_display_config.get('wifi_display_mode', 'bars')
+            wifi_display = get_wifi_display(wifi_mode, rssi)
+            status_line += wifi_display
+        except:
+            status_line += "?"
+    
+    # Affichage heure si activé
+    if current_display_config.get('show_time', False):
+        if status_line:  # Ajouter un séparateur si il y a déjà du contenu
+            status_line += " "
+        status_line += get_current_time_display()
+    
+    # Icône Firebase
     if firebase_status:
         firebase_icon = "☁️"  # Cloud pour Firebase OK
     else:
         firebase_icon = "❌"  # Erreur Firebase
-        
-    oled.text(f"{wifi_icon}{firebase_icon}", 85, 0)
+    
+    if status_line:
+        status_line += " " + firebase_icon
+    else:
+        status_line = firebase_icon
+    
+    # Afficher la ligne de statut en haut à droite
+    status_x = max(85, 128 - len(status_line) * 6)  # Ajuster selon la longueur
+    oled.text(status_line, status_x, 0)
     
     oled.hline(0, 10, 128, 1)
     
     # CO2 principal
     if co2_ppm is not None:
         co2_text = f"{co2_ppm} ppm"
-        oled.text(co2_text, 15, 20)
-        oled.text(f"Air: {status}", 5, 35)
+        # Centrer le texte CO2
+        co2_x = max(0, (128 - len(co2_text) * 8) // 2)
+        oled.text(co2_text, co2_x, 20)
         
-        # Barre de niveau
+        # Affichage qualité d'air configurable
+        if current_display_config.get('show_air_quality_text', True):
+            air_text = f"Air: {status}"
+            air_x = max(0, (128 - len(air_text) * 8) // 2)
+            oled.text(air_text, air_x, 35)
+        
+        # Barre de niveau CO2
         bar_width = min(120, int((co2_ppm / 2000) * 120))
         oled.fill_rect(4, 45, bar_width, 8, 1)
         oled.rect(4, 45, 120, 8, 1)
@@ -1311,7 +1543,7 @@ def draw_main_display(co2_ppm, status, emoji, wifi_status, firebase_status):
         oled.text("CAPTEUR", 25, 25)
         oled.text("ERREUR", 30, 40)
     
-    # Device ID en bas
+    # Device ID en bas (toujours affiché)
     oled.text(f"ID: {DEVICE_ID}", 0, 56)
     
     oled.show()
@@ -1566,6 +1798,12 @@ def main():
             if new_wifi_config:
                 print(f"📡 Nouveau changement WiFi détecté!")
                 apply_new_wifi_config(new_wifi_config)
+            
+            # Vérifier s'il y a des changements de configuration d'affichage
+            new_display_config = check_display_config_changes()
+            if new_display_config:
+                print(f"🎨 Nouveau changement affichage détecté!")
+                apply_new_display_config(new_display_config)
             
             # Attendre prochaine mesure
             time.sleep(MEASUREMENT_INTERVAL)
