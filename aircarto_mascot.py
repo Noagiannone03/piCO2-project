@@ -4,6 +4,7 @@ Animations et sprites pour différents états du système
 """
 
 import time
+import network
 from machine import Pin
 
 class AirCartoMascot:
@@ -362,37 +363,125 @@ class AirCartoMascot:
         
         self.oled.show()
 
-def draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_status, server_status):
-    """Interface principale SANS mascotte - design simple et propre"""
+def draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_status, server_status, display_config=None):
+    """Interface principale avec configuration dynamique personnalisable"""
+    
+    # Configuration par défaut si pas fournie
+    if display_config is None:
+        display_config = {
+            'header_text': 'My Pico',
+            'show_wifi_status': True,
+            'show_time': False,
+            'show_air_quality_text': True,
+            'wifi_display_mode': 'bars'
+        }
+    
     oled.fill(0)
     
-    # En-tête
-    oled.text("My Pico", 35, 0)
+    # En-tête personnalisable
+    header_text = display_config.get('header_text', 'My Pico')
+    # Centrer le texte selon sa longueur
+    header_x = max(0, (128 - len(header_text) * 8) // 2)
+    oled.text(header_text, header_x, 0)
+    
+    # Zone de statut (ligne du haut droite)
+    status_line = ""
+    
+    # Affichage WiFi configurable
+    if display_config.get('show_wifi_status', True):
+        try:
+            wlan = network.WLAN(network.STA_IF)
+            rssi = wlan.status('rssi') if wlan.isconnected() else -100
+            wifi_mode = display_config.get('wifi_display_mode', 'bars')
+            wifi_display = get_wifi_display_for_mascot(wifi_mode, rssi, wifi_status)
+            status_line += wifi_display
+        except:
+            status_line += "?"
+    
+    # Affichage heure si activé
+    if display_config.get('show_time', False):
+        if status_line:  # Ajouter un séparateur si il y a déjà du contenu
+            status_line += " "
+        status_line += get_current_time_display_for_mascot()
+    
+    # Icône Firebase/Serveur
+    firebase_icon = "S" if server_status else "X"
+    if status_line:
+        status_line += " " + firebase_icon
+    else:
+        status_line = firebase_icon
+    
+    # Afficher la ligne de statut en haut à droite
+    status_x = max(85, 128 - len(status_line) * 6)  # Ajuster selon la longueur
+    oled.text(status_line, status_x, 0)
+    
     oled.hline(0, 8, 128, 1)
     
     if co2_ppm is not None:
-        # MESURE PPM - centree et bien visible
+        # MESURE PPM - centrée et bien visible
         ppm_text = f"{co2_ppm} ppm"
         text_x = (128 - len(ppm_text) * 8) // 2
         oled.text(ppm_text, text_x, 20)
         
-        # STATUT - centre sous les PPM
-        status_x = (128 - len(status) * 8) // 2
-        oled.text(status, status_x, 35)
+        # Affichage qualité d'air configurable
+        if display_config.get('show_air_quality_text', True):
+            # STATUT - centré sous les PPM
+            status_x = (128 - len(status) * 8) // 2
+            oled.text(status, status_x, 35)
         
     else:
         # Erreur capteur
         oled.text("CAPTEUR ERREUR", 15, 25)
     
-    # STATUT WIFI - en bas sans accents - STABLE au lieu de connecte
-    wifi_text = "WiFi : stable" if wifi_status else "WiFi : deconnecte"
-    oled.text(wifi_text, 5, 55)
-    
-    # STATUT SERVEUR - en bas a droite
-    server_text = "S" if server_status else "X"
-    oled.text(server_text, 115, 55)
-    
     oled.show()
+
+
+def get_wifi_display_for_mascot(mode, rssi, wifi_connected):
+    """Génère l'affichage WiFi pour la mascotte selon le mode choisi"""
+    if not wifi_connected:
+        return "X" if mode == 'icon' else "OFF"
+    
+    if mode == 'bars':
+        if rssi >= -50:
+            return "||||"  # 4 barres
+        elif rssi >= -60:
+            return "|||"   # 3 barres  
+        elif rssi >= -70:
+            return "||"    # 2 barres
+        elif rssi >= -80:
+            return "|"     # 1 barre
+        else:
+            return ""      # Aucune barre
+    elif mode == 'icon':
+        return "W"
+    else:  # mode == 'text'
+        if rssi >= -50:
+            return "EXC"
+        elif rssi >= -60:
+            return "BON"
+        elif rssi >= -70:
+            return "MOY"
+        elif rssi >= -80:
+            return "FAIB"
+        else:
+            return "TRES"
+
+
+def get_current_time_display_for_mascot():
+    """Retourne l'heure actuelle formatée pour l'affichage mascotte"""
+    try:
+        t = time.localtime()
+        if t[0] >= 2024:  # Heure valide
+            return f"{t[3]:02d}:{t[4]:02d}"
+        else:
+            # Utiliser uptime approximatif - temps depuis démarrage en heures:minutes
+            uptime_seconds = int(time.time())
+            uptime_minutes = uptime_seconds // 60
+            hours = (uptime_minutes // 60) % 24  # Modulo 24 pour format heure
+            mins = uptime_minutes % 60
+            return f"{hours:02d}:{mins:02d}"
+    except:
+        return "--:--"
 
 def get_co2_tip(co2_ppm, animation_time):
     """Retourne un petit conseil discret selon le niveau de CO2"""

@@ -1789,7 +1789,7 @@ def main():
             
             # Affichage
             if use_mascot and mascot:
-                draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_connected, last_firebase_success)
+                draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_connected, last_firebase_success, current_display_config)
             else:
                 draw_main_display(co2_ppm, status, emoji, wifi_connected, last_firebase_success)
             
