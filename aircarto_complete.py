@@ -541,18 +541,45 @@ def sync_time():
     print("❌ Échec synchronisation NTP sur tous les serveurs")
     return False
 
+def get_current_timestamp():
+    """Obtient un timestamp correct même sans RTC"""
+    # Calculer un timestamp approximatif basé sur l'uptime
+    # En supposant que l'appareil a démarré récemment
+    
+    # Timestamp approximatif pour août 2025
+    base_timestamp = 1756339200  # 28 août 2025 00:00:00 UTC
+    
+    # Ajouter l'uptime depuis le démarrage
+    uptime_seconds = int(time.time() - startup_time)
+    current_timestamp = base_timestamp + uptime_seconds
+    
+    return current_timestamp
+
 def time_to_iso():
     """Convertit le timestamp actuel en format ISO pour Firebase"""
-    t = time.localtime()
-    
-    # Vérifier si l'heure est valide (après 2020)
-    if t[0] < 2020:
-        print("⚠️ Heure non synchronisée, utilisation timestamp Unix")
-        # Utiliser un timestamp Unix approximatif (secondes depuis epoch)
-        unix_timestamp = time.time() + 1640995200  # Offset pour 2022
-        t = time.localtime(unix_timestamp)
-    
-    return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
+    try:
+        # Essayer d'abord la synchronisation NTP
+        t = time.localtime()
+        
+        # Si l'année est correcte (>= 2024), utiliser l'heure système
+        if t[0] >= 2024:
+            print(f"✅ Utilisation heure système: {t[2]:02d}/{t[1]:02d}/{t[0]} {t[3]:02d}:{t[4]:02d}")
+            return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
+        
+        # Sinon, utiliser notre timestamp calculé
+        print("⚠️ Heure système incorrecte, utilisation timestamp calculé")
+        calculated_timestamp = get_current_timestamp()
+        t = time.localtime(calculated_timestamp)
+        
+        print(f"🕐 Timestamp calculé: {t[2]:02d}/{t[1]:02d}/{t[0]} {t[3]:02d}:{t[4]:02d}")
+        return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
+        
+    except Exception as e:
+        print(f"❌ Erreur timestamp: {e}")
+        # Fallback sur timestamp calculé
+        calculated_timestamp = get_current_timestamp()
+        t = time.localtime(calculated_timestamp) 
+        return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
 
 # =====================================================
 # GESTION WIFI & CONFIGURATION
