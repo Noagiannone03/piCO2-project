@@ -556,15 +556,17 @@
                     </div>
 
                     <div class="wifi-status" id="wifi-status">
-                        <div class="wifi-loading">
-                            <div class="spinner"></div>
-                            <span>Recherche du réseau Pico...</span>
+                        <div style="color: var(--text-secondary); font-weight: 600;">
+                            📱 Connectez-vous au réseau WiFi de votre Pico
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                            Une fois connecté, cliquez sur le bouton ci-dessous
                         </div>
                     </div>
                     
                     <div style="margin-top: 1rem; text-align: center;">
                         <button class="btn btn-secondary" onclick="manualPicoConnect()" style="font-size: 0.9rem;">
-                            🔧 J'ai réussi à me connecter manuellement
+                            ✅ Je suis connecté au WiFi My-Pico
                         </button>
                         <br><br>
                         <button class="btn btn-secondary" onclick="forceNextStep()" style="font-size: 0.9rem;">
@@ -593,8 +595,14 @@
                             <li>1. Sélectionnez votre réseau WiFi domestique</li>
                             <li>2. Entrez le mot de passe WiFi</li>
                             <li>3. Cliquez sur "Configurer et démarrer"</li>
-                            <li>4. Attendez la redirection automatique</li>
+                            <li>4. Revenez sur cette page une fois terminé</li>
                         </ol>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; text-align: center;">
+                        <button class="btn btn-secondary" onclick="picoConfigured()" style="font-size: 0.9rem;">
+                            ✅ J'ai configuré mon Pico, je reviens sur la page
+                        </button>
                     </div>
                 </div>
             </div>
@@ -630,7 +638,6 @@
         let currentStep = 2;
         let deviceId = '';
         let picoIP = null;
-        let wifiCheckInterval = null;
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
@@ -696,9 +703,14 @@
             if (currentStep === 1) {
                 btnNext.disabled = !deviceId;
             } else if (currentStep === 3) {
-                startWiFiDetection();
+                // Désactiver le bouton suivant jusqu'à ce que l'user confirme
+                btnNext.disabled = true;
             } else if (currentStep === 4) {
                 setupPicoConfigButton();
+                // Désactiver le bouton suivant jusqu'à ce que l'user confirme
+                btnNext.disabled = true;
+            } else {
+                btnNext.disabled = false;
             }
         }
 
@@ -724,83 +736,9 @@
                 currentStep--;
                 updateStepDisplay();
                 updateNavigation();
-                
-                // Arrêter la détection WiFi si on revient en arrière
-                if (wifiCheckInterval) {
-                    clearInterval(wifiCheckInterval);
-                    wifiCheckInterval = null;
-                }
             }
         }
 
-        function startWiFiDetection() {
-            const wifiStatus = document.getElementById('wifi-status');
-            console.log('Démarrage de la détection WiFi Pico...');
-            
-            // Tenter une détection immédiate
-            checkPicoConnection();
-            
-            // Ensuite vérifier périodiquement
-            wifiCheckInterval = setInterval(() => {
-                if (currentStep === 3) {
-                    checkPicoConnection();
-                } else {
-                    // Arrêter l'intervalle si on n'est plus à l'étape 3
-                    clearInterval(wifiCheckInterval);
-                    wifiCheckInterval = null;
-                }
-            }, 3000);
-        }
-
-        function checkPicoConnection() {
-            // Tenter une requête vers l'IP standard du Pico
-            const picoTestIP = '192.168.4.1';
-            console.log(`Vérification connexion Pico à ${picoTestIP}...`);
-            
-            // Test simple de connectivité
-            fetch(`http://${picoTestIP}`, { 
-                method: 'HEAD', 
-                mode: 'no-cors',
-                timeout: 3000 
-            })
-            .then((response) => {
-                // Connexion réussie (même en mode no-cors, si pas d'erreur = accessible)
-                console.log('Connexion Pico détectée!');
-                showPicoConnected(picoTestIP);
-            })
-            .catch((error) => {
-                console.log(`Pico pas encore détecté (${error.message || 'timeout'})`);
-                // Note: en mode no-cors, on aura toujours une "erreur" même si ça fonctionne
-                // mais si le réseau n'est pas accessible du tout, ça fail vraiment
-            });
-        }
-        
-        function showPicoConnected(ip) {
-            if (currentStep === 3) {
-                const wifiStatus = document.getElementById('wifi-status');
-                wifiStatus.className = 'wifi-status connected';
-                wifiStatus.innerHTML = `
-                    <div style="color: var(--success); font-weight: 600;">
-                        ✅ Connecté au réseau My-Pico-${deviceId}
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                        IP Pico détectée: ${ip}
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                        Prêt pour la configuration
-                    </div>
-                `;
-                
-                picoIP = ip;
-                
-                // Auto-avancer après connexion
-                setTimeout(() => {
-                    if (currentStep === 3) {
-                        nextStep();
-                    }
-                }, 2000);
-            }
-        }
 
         function setupPicoConfigButton() {
             const btnConfig = document.getElementById('btn-pico-config');
@@ -849,7 +787,22 @@
         function manualPicoConnect() {
             // Permettre à l'utilisateur de continuer manuellement
             picoIP = '192.168.4.1';
-            showPicoConnected(picoIP);
+            
+            // Afficher le message de connexion réussie
+            const wifiStatus = document.getElementById('wifi-status');
+            wifiStatus.className = 'wifi-status connected';
+            wifiStatus.innerHTML = `
+                <div style="color: var(--success); font-weight: 600;">
+                    ✅ Connecté au réseau My-Pico-${deviceId}
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                    Prêt pour l'étape suivante
+                </div>
+            `;
+            
+            // Activer le bouton suivant
+            const btnNext = document.getElementById('btn-next');
+            btnNext.disabled = false;
         }
 
         function forceNextStep() {
@@ -859,6 +812,18 @@
                 picoIP = '192.168.4.1';
             }
             nextStep();
+        }
+
+        function picoConfigured() {
+            // L'utilisateur confirme avoir configuré son Pico
+            console.log('Utilisateur confirme configuration Pico terminée');
+            
+            // Activer le bouton suivant
+            const btnNext = document.getElementById('btn-next');
+            btnNext.disabled = false;
+            
+            // Afficher un message de confirmation
+            alert('Configuration confirmée ! Vous pouvez passer à l\'étape suivante.');
         }
 
         function goToConfig() {
