@@ -1829,7 +1829,7 @@
                                 }
                                 
                                 const timeDiff = now - lastUpdate;
-                                const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
+                                const isOnline = timeDiff < 5 * 60 * 1000; // 5 minutes
                                 
                                 deviceData.info = {
                                     ...deviceData.info,
@@ -1841,7 +1841,7 @@
                                 const now = new Date();
                                 const lastSeen = deviceData.info?.lastSeen?.toDate() || new Date(0);
                                 const timeDiff = now - lastSeen;
-                                const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
+                                const isOnline = timeDiff < 5 * 60 * 1000; // 5 minutes
                                 
                                 deviceData.info = {
                                     ...deviceData.info,
@@ -1855,7 +1855,7 @@
                             const now = new Date();
                             const lastSeen = deviceData.info?.lastSeen?.toDate() || new Date(0);
                             const timeDiff = now - lastSeen;
-                            const isOnline = timeDiff < 10 * 60 * 1000; // 10 minutes
+                            const isOnline = timeDiff < 5 * 60 * 1000; // 5 minutes
                             
                             deviceData.info = {
                                 ...deviceData.info,

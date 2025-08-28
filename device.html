@@ -845,7 +845,12 @@
 
             <!-- Tableau des données récentes -->
             <div class="data-table-section">
-                <h3 class="chart-title">📋 Relevés Récents</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 class="chart-title">📋 Relevés Récents</h3>
+                    <button class="btn btn-secondary" onclick="exportAllMeasurements()">
+                        📥 Exporter toutes les mesures
+                    </button>
+                </div>
                 <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
@@ -1015,15 +1020,14 @@
             try {
                 console.log('🔄 Chargement des mesures pour device:', deviceId);
                 const hours = parseInt(document.getElementById('timeRange').value);
-                const startTime = new Date();
-                startTime.setHours(startTime.getHours() - hours);
-
+                
+                // Pour récupérer les mesures même avec des timestamps incorrects,
+                // on fait une requête sans filtre de temps d'abord
                 const measurementsRef = collection(db, 'measurements', deviceId, 'data');
                 const q = query(
                     measurementsRef,
-                    where('timestamp', '>=', startTime),
                     orderBy('timestamp', 'desc'),
-                    limit(1000)
+                    limit(Math.max(1000, hours * 60)) // Au moins 1000 mesures
                 );
 
                 console.log('📊 Requête mesures avec timeRange:', hours, 'heures');
@@ -1492,6 +1496,105 @@
             console.log('ℹ️  Tapez testDeviceFirestore() dans la console pour relancer');
         };
 
+        // Export des mesures
+        window.exportAllMeasurements = async function() {
+            try {
+                console.log('📥 Démarrage export de toutes les mesures...');
+                
+                // Afficher notification de chargement
+                showNotification('📥 Export en cours...', 'info');
+                
+                // Requête pour toutes les mesures
+                const measurementsRef = collection(db, 'measurements', deviceId, 'data');
+                const q = query(measurementsRef, orderBy('timestamp', 'desc'));
+                
+                const snapshot = await getDocs(q);
+                console.log(`📊 Nombre total de mesures à exporter: ${snapshot.size}`);
+                
+                if (snapshot.size === 0) {
+                    showNotification('⚠️ Aucune mesure à exporter', 'warning');
+                    return;
+                }
+                
+                // Préparer les données CSV
+                const csvData = [];
+                csvData.push(['Timestamp', 'Date/Heure', 'CO2 (ppm)', 'Qualité Air', 'Température (°C)', 'Humidité (%)', 'Device ID']);
+                
+                snapshot.forEach((doc) => {
+                    const rawData = doc.data();
+                    let processedData;
+                    
+                    if (rawData.fields) {
+                        // Format API REST Firestore
+                        processedData = {
+                            co2_ppm: parseInt(rawData.fields.co2_ppm?.integerValue) || null,
+                            air_quality: rawData.fields.air_quality?.stringValue || '',
+                            temperature: parseFloat(rawData.fields.temperature?.doubleValue) || '',
+                            humidity: parseFloat(rawData.fields.humidity?.doubleValue) || '',
+                            deviceId: rawData.fields.deviceId?.stringValue || deviceId,
+                            processedTimestamp: rawData.fields.timestamp?.timestampValue ? 
+                                              new Date(rawData.fields.timestamp.timestampValue) : null
+                        };
+                    } else {
+                        // Format SDK normal
+                        let processedTimestamp = null;
+                        if (rawData.timestamp && rawData.timestamp.toDate) {
+                            processedTimestamp = rawData.timestamp.toDate();
+                        } else if (rawData.timestamp instanceof Date) {
+                            processedTimestamp = rawData.timestamp;
+                        } else if (typeof rawData.timestamp === 'string') {
+                            processedTimestamp = new Date(rawData.timestamp);
+                        }
+                        
+                        processedData = {
+                            co2_ppm: rawData.co2_ppm || rawData.co2 || null,
+                            air_quality: rawData.air_quality || '',
+                            temperature: rawData.temperature || '',
+                            humidity: rawData.humidity || '',
+                            deviceId: rawData.deviceId || deviceId,
+                            processedTimestamp: processedTimestamp
+                        };
+                    }
+                    
+                    // Formater la ligne CSV
+                    const timestamp = processedData.processedTimestamp ? processedData.processedTimestamp.toISOString() : '';
+                    const dateTime = processedData.processedTimestamp ? processedData.processedTimestamp.toLocaleString('fr-FR') : '';
+                    
+                    csvData.push([
+                        timestamp,
+                        dateTime,
+                        processedData.co2_ppm || '',
+                        processedData.air_quality,
+                        processedData.temperature,
+                        processedData.humidity,
+                        processedData.deviceId
+                    ]);
+                });
+                
+                // Créer le fichier CSV
+                const csvContent = csvData.map(row => row.map(field => `"${field}"`).join(',')).join('\\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                
+                // Télécharger le fichier
+                const link = document.createElement('a');
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `my-pico-${deviceId}-mesures-${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    showNotification(`✅ ${snapshot.size} mesures exportées avec succès !`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erreur export:', error);
+                showNotification('❌ Erreur lors de l\'export', 'error');
+            }
+        };
+
         // Fonctions globales
         window.goBack = function() {
             window.location.href = 'https://noagiannone03.github.io/piCO2-project/dashboard.html';
@@ -1501,13 +1604,20 @@
             loadMeasurements();
         };
 
-        function showError(message) {
+        function showNotification(message, type = 'info') {
+            const colors = {
+                'success': 'var(--success)',
+                'error': 'var(--danger)', 
+                'warning': 'var(--warning)',
+                'info': 'var(--info)'
+            };
+            
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
                 top: 100px;
                 right: 20px;
-                background: var(--danger);
+                background: ${colors[type] || colors.info};
                 color: white;
                 padding: 1rem 2rem;
                 border-radius: var(--radius-medium);
@@ -1515,11 +1625,17 @@
                 z-index: 1001;
                 animation: slideIn 0.3s ease;
                 max-width: 400px;
+                font-weight: 500;
             `;
             notification.textContent = message;
             document.body.appendChild(notification);
             
-            setTimeout(() => notification.remove(), 5000);
+            const duration = type === 'success' ? 3000 : 5000;
+            setTimeout(() => notification.remove(), duration);
+        }
+
+        function showError(message) {
+            showNotification(message, 'error');
         }
 
         // Nettoyage lors de la fermeture

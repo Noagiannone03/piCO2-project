@@ -33,6 +33,7 @@ import urequests
 import struct
 import os
 import ubinascii
+import ntptime
 from aircarto_mascot import AirCartoMascot, draw_main_display_with_mascot
 
 print("🌱 === My Pico v3.0 - Firebase Ready === 🌱")
@@ -514,9 +515,43 @@ def update_device_status():
     
     firebase_request("PATCH", f"devices/{DEVICE_ID}?updateMask.fieldPaths=info.lastSeen&updateMask.fieldPaths=info.status", update_data)
 
+def sync_time():
+    """Synchronise l'heure avec NTP"""
+    ntp_servers = ['pool.ntp.org', 'fr.pool.ntp.org', 'europe.pool.ntp.org']
+    
+    for server in ntp_servers:
+        try:
+            print(f"🕐 Synchronisation NTP avec {server}...")
+            ntptime.host = server
+            ntptime.settime()
+            print(f"✅ Heure synchronisée avec {server}!")
+            
+            # Vérifier que la synchronisation a fonctionné
+            t = time.localtime()
+            if t[0] > 2020:  # Année cohérente
+                return True
+            else:
+                print(f"⚠️ Date suspecte après sync: {t[0]}")
+                continue
+                
+        except Exception as e:
+            print(f"❌ Erreur NTP {server}: {e}")
+            continue
+    
+    print("❌ Échec synchronisation NTP sur tous les serveurs")
+    return False
+
 def time_to_iso():
     """Convertit le timestamp actuel en format ISO pour Firebase"""
     t = time.localtime()
+    
+    # Vérifier si l'heure est valide (après 2020)
+    if t[0] < 2020:
+        print("⚠️ Heure non synchronisée, utilisation timestamp Unix")
+        # Utiliser un timestamp Unix approximatif (secondes depuis epoch)
+        unix_timestamp = time.time() + 1640995200  # Offset pour 2022
+        t = time.localtime(unix_timestamp)
+    
     return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
 
 # =====================================================
@@ -624,6 +659,20 @@ def connect_wifi(ssid=None, password=None):
         
         if internet_ok:
             wifi_connected = True
+            
+            # Synchroniser l'heure via NTP après connexion Internet réussie
+            print("🕐 Synchronisation de l'heure...")
+            if mascot:
+                mascot.draw_config_screen("ntp_sync", "Synchronisation", "Heure NTP...")
+            else:
+                display_status("Synchronisation", "Heure NTP...")
+            
+            ntp_success = sync_time()
+            if ntp_success:
+                current_time = time.localtime()
+                print(f"✅ Heure synchronisée: {current_time[2]:02d}/{current_time[1]:02d}/{current_time[0]} {current_time[3]:02d}:{current_time[4]:02d}")
+            else:
+                print("⚠️ Synchronisation NTP échouée, utilisation heure locale")
             
             # Sauvegarder config WiFi
             config = load_config()
