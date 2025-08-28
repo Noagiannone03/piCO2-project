@@ -76,6 +76,8 @@ ap_mode = False
 mascot = None
 device_registered = False
 startup_time = time.time()
+last_wifi_config_check = 0
+current_wifi_config_version = 1
 
 # =====================================================
 # UTILITAIRES SYSTÈME
@@ -408,6 +410,21 @@ def register_device_firebase():
                     }
                 }
             },
+            "wifiConfig": {
+                "mapValue": {
+                    "fields": {
+                        "currentSSID": {"stringValue": device_info["wifiSSID"]},
+                        "currentPassword": {"stringValue": "[HIDDEN]"},  # Ne pas stocker le vrai password
+                        "newSSID": {"nullValue": None},
+                        "newPassword": {"nullValue": None},
+                        "lastModified": {"timestampValue": time_to_iso()},
+                        "changeRequested": {"booleanValue": False},
+                        "lastConnectionAttempt": {"nullValue": None},
+                        "connectionStatus": {"stringValue": "connected"},
+                        "configVersion": {"integerValue": "1"}
+                    }
+                }
+            },
             "calibration": {
                 "mapValue": {
                     "fields": {
@@ -580,6 +597,174 @@ def time_to_iso():
         calculated_timestamp = get_current_timestamp()
         t = time.localtime(calculated_timestamp) 
         return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d}T{t[3]:02d}:{t[4]:02d}:{t[5]:02d}Z"
+
+def check_wifi_config_changes():
+    """Vérifie si la configuration WiFi a été modifiée dans Firebase"""
+    global current_wifi_config_version, last_wifi_config_check
+    
+    # Vérifier seulement toutes les minutes pour éviter de surcharger Firebase
+    current_time = time.time()
+    if current_time - last_wifi_config_check < 60:
+        return None
+    
+    last_wifi_config_check = current_time
+    
+    try:
+        print("🔍 Vérification changements WiFi...")
+        
+        # Récupérer la config WiFi actuelle depuis Firebase
+        result = firebase_request("GET", f"devices/{DEVICE_ID}")
+        
+        if not result or 'fields' not in result:
+            print("❌ Impossible de récupérer la config Firebase")
+            return None
+        
+        wifi_config = result['fields'].get('wifiConfig', {})
+        if 'mapValue' not in wifi_config or 'fields' not in wifi_config['mapValue']:
+            print("📋 Aucune config WiFi dans Firebase")
+            return None
+        
+        wifi_fields = wifi_config['mapValue']['fields']
+        
+        # Vérifier si un changement est demandé
+        change_requested = wifi_fields.get('changeRequested', {}).get('booleanValue', False)
+        
+        if not change_requested:
+            return None
+        
+        # Récupérer la nouvelle configuration
+        new_ssid = wifi_fields.get('newSSID', {}).get('stringValue')
+        new_password = wifi_fields.get('newPassword', {}).get('stringValue')
+        config_version = int(wifi_fields.get('configVersion', {}).get('integerValue', '1'))
+        
+        if not new_ssid or not new_password:
+            print("❌ Config WiFi incomplète dans Firebase")
+            return None
+        
+        if config_version <= current_wifi_config_version:
+            print("📋 Version config déjà traitée")
+            return None
+        
+        print(f"🆕 Nouvelle config WiFi détectée: {new_ssid} (version {config_version})")
+        
+        return {
+            'ssid': new_ssid,
+            'password': new_password,
+            'version': config_version
+        }
+        
+    except Exception as e:
+        print(f"❌ Erreur vérification config WiFi: {e}")
+        return None
+
+def apply_new_wifi_config(new_config):
+    """Applique une nouvelle configuration WiFi"""
+    global current_wifi_config_version, wifi_connected
+    
+    print(f"🔄 Application nouvelle config WiFi: {new_config['ssid']}")
+    
+    # Marquer la tentative dans Firebase
+    update_wifi_connection_status("attempting", new_config['version'])
+    
+    # Déconnecter du réseau actuel
+    wlan = network.WLAN(network.STA_IF)
+    if wlan.isconnected():
+        print("🔌 Déconnexion du réseau actuel...")
+        wlan.disconnect()
+        time.sleep(2)
+    
+    wlan.active(False)
+    time.sleep(1)
+    wlan.active(True)
+    time.sleep(2)
+    
+    # Essayer de se connecter au nouveau réseau
+    if mascot:
+        mascot.draw_config_screen("wifi_change", f"Nouveau WiFi", new_config['ssid'])
+    else:
+        display_status("Nouveau WiFi", new_config['ssid'])
+    
+    try:
+        if connect_wifi(new_config['ssid'], new_config['password']):
+            print(f"✅ Connexion réussie au nouveau réseau: {new_config['ssid']}")
+            
+            # Sauvegarder la nouvelle config localement
+            config = load_config()
+            config['wifi'] = {
+                'ssid': new_config['ssid'],
+                'password': new_config['password']
+            }
+            save_config(config)
+            
+            # Mettre à jour la version actuelle
+            current_wifi_config_version = new_config['version']
+            wifi_connected = True
+            
+            # Confirmer le succès dans Firebase
+            update_wifi_connection_status("connected", new_config['version'], new_config['ssid'])
+            
+            if mascot:
+                mascot.draw_config_screen("wifi_success", f"WiFi mis à jour!", new_config['ssid'])
+                time.sleep(3)
+            
+            return True
+        else:
+            print(f"❌ Échec connexion au nouveau réseau: {new_config['ssid']}")
+            
+            # Marquer l'échec dans Firebase
+            update_wifi_connection_status("failed", new_config['version'])
+            
+            # Essayer de se reconnecter à l'ancien réseau
+            print("🔄 Reconnexion à l'ancien réseau...")
+            old_config = load_config()
+            if old_config.get('wifi'):
+                connect_wifi(old_config['wifi']['ssid'], old_config['wifi']['password'])
+            
+            if mascot:
+                mascot.draw_config_screen("wifi_fail", "Échec nouveau WiFi", "Ancien réseau restauré")
+                time.sleep(3)
+            
+            return False
+            
+    except Exception as e:
+        print(f"❌ Erreur application config WiFi: {e}")
+        update_wifi_connection_status("error", new_config['version'])
+        return False
+
+def update_wifi_connection_status(status, version, ssid=None):
+    """Met à jour le statut de connexion WiFi dans Firebase"""
+    try:
+        update_data = {
+            "fields": {
+                "wifiConfig": {
+                    "mapValue": {
+                        "fields": {
+                            "lastConnectionAttempt": {"timestampValue": time_to_iso()},
+                            "connectionStatus": {"stringValue": status},
+                            "configVersion": {"integerValue": str(version)}
+                        }
+                    }
+                }
+            }
+        }
+        
+        # Ajouter le SSID actuel si connexion réussie
+        if status == "connected" and ssid:
+            update_data["fields"]["wifiConfig"]["mapValue"]["fields"]["currentSSID"] = {"stringValue": ssid}
+            update_data["fields"]["wifiConfig"]["mapValue"]["fields"]["changeRequested"] = {"booleanValue": False}
+        
+        # Marquer la demande comme traitée si échec
+        if status in ["failed", "error"]:
+            update_data["fields"]["wifiConfig"]["mapValue"]["fields"]["changeRequested"] = {"booleanValue": False}
+        
+        firebase_request("PATCH", 
+                        f"devices/{DEVICE_ID}?updateMask.fieldPaths=wifiConfig.lastConnectionAttempt&updateMask.fieldPaths=wifiConfig.connectionStatus&updateMask.fieldPaths=wifiConfig.configVersion&updateMask.fieldPaths=wifiConfig.currentSSID&updateMask.fieldPaths=wifiConfig.changeRequested", 
+                        update_data)
+        
+        print(f"📋 Statut WiFi mis à jour: {status}")
+        
+    except Exception as e:
+        print(f"❌ Erreur mise à jour statut WiFi: {e}")
 
 # =====================================================
 # GESTION WIFI & CONFIGURATION
@@ -1375,6 +1560,12 @@ def main():
                 draw_main_display_with_mascot(oled, mascot, co2_ppm, status, emoji, wifi_connected, last_firebase_success)
             else:
                 draw_main_display(co2_ppm, status, emoji, wifi_connected, last_firebase_success)
+            
+            # Vérifier s'il y a des changements de configuration WiFi
+            new_wifi_config = check_wifi_config_changes()
+            if new_wifi_config:
+                print(f"📡 Nouveau changement WiFi détecté!")
+                apply_new_wifi_config(new_wifi_config)
             
             # Attendre prochaine mesure
             time.sleep(MEASUREMENT_INTERVAL)
